@@ -22,6 +22,44 @@ pest()->extend(TestCase::class)
 
 expect()->extend('toBeOne', fn () => $this->toBe(1));
 
+pest()->presets()->custom('strictWithLaravelExceptions', function (array $namespaces): array {
+    $expectations = [];
+
+    foreach ($namespaces as $namespace) {
+        $expectations[] = expect($namespace)
+            ->classes()
+            ->not
+            ->toHaveProtectedMethodsBesides([
+                'casts',
+                'boot',
+                'booted',
+                'rules',
+                'prepareForValidation',
+                'newEloquentBuilder',
+            ]);
+
+        $expectations[] = expect($namespace)
+            ->classes()
+            ->not
+            ->toBeAbstract();
+
+        $expectations[] = expect($namespace)->toUseStrictTypes();
+
+        $expectations[] = expect($namespace)->toUseStrictEquality();
+
+        $expectations[] = expect($namespace)
+            ->classes()
+            ->toBeFinal();
+    }
+
+    $expectations[] = expect([
+        'sleep',
+        'usleep',
+    ])->not->toBeUsed();
+
+    return $expectations;
+});
+
 function something(): void
 {
     // ..

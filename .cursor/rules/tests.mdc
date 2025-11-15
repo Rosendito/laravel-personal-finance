@@ -1,0 +1,14 @@
+---
+globs: tests/**
+alwaysApply: false
+---
+
+Always use describe()
+
+and if are testing a specific class, use that class as describe name
+
+Example:
+
+describe(DoSomethingAction::class, function (): void {
+
+});
