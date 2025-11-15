@@ -1,4 +1,4 @@
-## Backend Domain & Migrations
+## Backend Domain & Migrations (done)
 
 - [ ] **Review MVP domain specification**
     - [ ] Read `docs/mvp.md` and extract all required tables, fields, and constraints.

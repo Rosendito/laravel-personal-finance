@@ -134,6 +134,30 @@ Detalla el monto asignado a cada categoría dentro de un presupuesto.
 
 ---
 
+### **cached_aggregates**
+
+This table stores pre-computed aggregate metrics for any model using a polymorphic relationship (for example, budgets, accounts, users).
+
+| Campo             | Tipo      | Notas                                                                 |
+| ----------------- | --------- | --------------------------------------------------------------------- |
+| id                | PK        |                                                                       |
+| aggregatable_type | string    | Morph type to the related model (e.g. `App\Models\Budget`)           |
+| aggregatable_id   | bigint    | Morph id to the related model                                        |
+| key               | string    | Metric key (e.g. `current_balance`, `spent_this_month`)              |
+| scope             | string    | Optional scope/period (e.g. `2025-11`, `daily`, `category:food`)     |
+| value_decimal     | decimal   | Optional decimal value (e.g. money amounts)                          |
+| value_int         | bigint    | Optional integer value                                               |
+| value_json        | json      | Optional structured aggregate payload                                |
+| created_at        | datetime  |                                                                       |
+| updated_at        | datetime  |                                                                       |
+| Índices           | composite | Index on `(aggregatable_type, aggregatable_id, key, scope)`          |
+
+Design note:
+
+- In PHP we will use enums to represent allowed `key` (and potentially `scope`) values, but the database column type will remain string, so that extending the enum does not require a schema change.
+
+---
+
 # ⚖️ **Reglas duras de integridad**
 
 1. **Doble partida garantizada**

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->string('name');
-            $table->enum('type', ['INCOME', 'EXPENSE']);
+            $table->string('type', 10);
             $table->boolean('is_archived')->default(false);
             $table->timestamps();
 

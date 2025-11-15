@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->enum('type', ['ASSET', 'LIABILITY', 'INCOME', 'EXPENSE', 'EQUITY']);
+            $table->string('type', 10);
             $table->string('currency_code', 3);
             $table->boolean('is_archived')->default(false);
             $table->timestamps();
