@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Exceptions\LedgerIntegrityException;
 use Database\Factories\LedgerEntryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,20 @@ final class LedgerEntry extends Model
         return $this->belongsTo(Currency::class, 'currency_code', 'code');
     }
 
+    protected static function booted(): void
+    {
+        self::saving(function (self $entry): void {
+            $entry->assertNonZeroAmount();
+
+            $account = $entry->resolveAccount();
+            $transaction = $entry->resolveTransaction();
+
+            $entry->alignCurrencyWithAccount($account);
+            $entry->assertAccountBelongsToTransactionUser($account, $transaction);
+            $entry->assertCategoryBelongsToUser($transaction);
+        });
+    }
+
     /**
      * @return array<string, string>
      */
@@ -50,5 +65,105 @@ final class LedgerEntry extends Model
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    private function assertNonZeroAmount(): void
+    {
+        $amount = $this->amount;
+
+        if ($amount === null || bccomp((string) $amount, '0', 6) === 0) {
+            throw LedgerIntegrityException::amountMustBeNonZero();
+        }
+    }
+
+    private function resolveAccount(): LedgerAccount
+    {
+        if ($this->relationLoaded('account')) {
+            /** @var LedgerAccount $account */
+            $account = $this->getRelation('account');
+
+            return $account;
+        }
+
+        $account = LedgerAccount::query()->find($this->account_id);
+
+        if ($account === null) {
+            throw LedgerIntegrityException::accountNotFound((int) $this->account_id);
+        }
+
+        return $account;
+    }
+
+    private function resolveTransaction(): LedgerTransaction
+    {
+        if ($this->relationLoaded('transaction')) {
+            /** @var LedgerTransaction $transaction */
+            $transaction = $this->getRelation('transaction');
+
+            return $transaction;
+        }
+
+        $transaction = LedgerTransaction::query()->find($this->transaction_id);
+
+        if ($transaction === null) {
+            throw LedgerIntegrityException::transactionNotFound((int) $this->transaction_id);
+        }
+
+        return $transaction;
+    }
+
+    private function alignCurrencyWithAccount(LedgerAccount $account): void
+    {
+        if ($this->currency_code === null) {
+            $this->currency_code = $account->currency_code;
+
+            return;
+        }
+
+        if ($this->currency_code !== $account->currency_code) {
+            throw LedgerIntegrityException::currencyMismatch();
+        }
+    }
+
+    private function assertAccountBelongsToTransactionUser(LedgerAccount $account, LedgerTransaction $transaction): void
+    {
+        if ($account->user_id !== $transaction->user_id) {
+            throw LedgerIntegrityException::accountOwnershipMismatch();
+        }
+    }
+
+    private function assertCategoryBelongsToUser(LedgerTransaction $transaction): void
+    {
+        if ($this->category_id === null) {
+            return;
+        }
+
+        $category = $this->resolveCategory();
+
+        if ($category->user_id !== $transaction->user_id) {
+            throw LedgerIntegrityException::categoryOwnershipMismatch();
+        }
+    }
+
+    private function resolveCategory(): ?Category
+    {
+        if ($this->category_id === null) {
+            return null;
+        }
+
+        if ($this->relationLoaded('category')) {
+            /** @var Category|null $category */
+            $category = $this->getRelation('category');
+
+            return $category;
+        }
+
+        $category = Category::query()->find($this->category_id);
+
+        if ($category === null) {
+            throw LedgerIntegrityException::categoryNotFound((int) $this->category_id);
+        }
+
+        return $category;
     }
 }

@@ -1,4 +1,4 @@
-## Backend Integrity Rules & Validation
+## Backend Integrity Rules & Validation DONE
 
 - [ ] **Database-level integrity rules**
     - [ ] Ensure `amount <> 0` at the database or application level for `ledger_entries`.
