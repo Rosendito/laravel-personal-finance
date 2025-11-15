@@ -7,7 +7,9 @@ namespace App\Data;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Data;
+use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
+#[TypeScript]
 final class IncomeStatementSummaryData extends Data
 {
     public function __construct(
