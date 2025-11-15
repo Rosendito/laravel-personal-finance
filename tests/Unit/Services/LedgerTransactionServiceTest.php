@@ -8,6 +8,7 @@ use App\Exceptions\LedgerIntegrityException;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
+use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Services\LedgerTransactionService;
 use Illuminate\Support\Facades\Date;
@@ -204,6 +205,33 @@ describe(LedgerTransactionService::class, function (): void {
         expect($transaction->entries->firstWhere('category_id', $category->id))->not->toBeNull();
     });
 
+    it('persists optional amount_base values when provided', function (): void {
+        /** @var callable $makeTransactionData */
+        $makeTransactionData = $this->makeTransactionData;
+
+        $data = $makeTransactionData(entries: [
+            [
+                'account_id' => $this->assetAccount->id,
+                'amount' => 750,
+                'amount_base' => '750.25',
+            ],
+            [
+                'account_id' => $this->incomeAccount->id,
+                'amount' => -750,
+                'amount_base' => '-750.25',
+            ],
+        ]);
+
+        $transaction = $this->service->create(
+            $this->user,
+            $data,
+        );
+
+        expect($transaction->entries)->toHaveCount(2);
+        expect($transaction->entries->first()->amount_base)->toBe('750.250000');
+        expect($transaction->entries->last()->amount_base)->toBe('-750.250000');
+    });
+
     it('rejects categories that belong to another user', function (): void {
         /** @var callable $makeTransactionData */
         $makeTransactionData = $this->makeTransactionData;
@@ -257,5 +285,28 @@ describe(LedgerTransactionService::class, function (): void {
             $this->user,
             $data,
         ))->toThrow(LedgerIntegrityException::class, 'currency');
+    });
+
+    it('returns the existing transaction when an idempotency key is reused', function (): void {
+        /** @var callable $makeTransactionData */
+        $makeTransactionData = $this->makeTransactionData;
+
+        $data = $makeTransactionData(transactionOverrides: [
+            'idempotency_key' => 'dup-123',
+        ]);
+
+        $first = $this->service->create(
+            $this->user,
+            $data,
+        );
+
+        $second = $this->service->create(
+            $this->user,
+            $data,
+        );
+
+        expect($first->id)->toBe($second->id);
+        expect($second->entries)->toHaveCount(2);
+        expect(LedgerTransaction::query()->count())->toBe(1);
     });
 });

@@ -12,13 +12,21 @@ use App\Models\LedgerAccount;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class LedgerTransactionService
 {
     public function create(User $user, LedgerTransactionData $transactionData): LedgerTransaction
     {
+        $existingTransaction = $this->findTransactionByIdempotencyKey($user, $transactionData->idempotency_key);
+
+        if ($existingTransaction !== null) {
+            return $existingTransaction;
+        }
+
         /** @var Collection<int, LedgerEntryData> $entryCollection */
         $entryCollection = collect($transactionData->entries->items());
 
@@ -32,21 +40,36 @@ final class LedgerTransactionService
             ->map(fn (LedgerEntryData $entry): array => $this->normalizeEntry($entry, $user, $accounts, $categories))
             ->all();
 
-        return DB::transaction(function () use ($user, $transactionData, $normalizedEntries): LedgerTransaction {
-            $transaction = new LedgerTransaction();
+        try {
+            return DB::transaction(function () use ($user, $transactionData, $normalizedEntries): LedgerTransaction {
+                $transaction = new LedgerTransaction();
 
-            $transaction->forceFill(
-                $this->buildTransactionAttributes($transactionData, $user),
-            );
+                $transaction->forceFill(
+                    $this->buildTransactionAttributes($transactionData, $user),
+                );
 
-            $transaction->save();
+                $transaction->save();
 
-            EloquentModel::unguarded(function () use ($transaction, $normalizedEntries): void {
-                $transaction->entries()->createMany($normalizedEntries);
+                EloquentModel::unguarded(function () use ($transaction, $normalizedEntries): void {
+                    $transaction->entries()->createMany($normalizedEntries);
+                });
+
+                return $transaction->fresh('entries.account');
             });
+        } catch (QueryException $exception) {
+            if (
+                $transactionData->idempotency_key !== null
+                && $this->isIdempotencyViolation($exception)
+            ) {
+                $existingTransaction = $this->findTransactionByIdempotencyKey($user, $transactionData->idempotency_key);
 
-            return $transaction->fresh('entries.account');
-        });
+                if ($existingTransaction !== null) {
+                    return $existingTransaction;
+                }
+            }
+
+            throw $exception;
+        }
     }
 
     /**
@@ -131,6 +154,7 @@ final class LedgerTransactionService
             'account_id' => $account->id,
             'amount' => $amount,
             'currency_code' => $currencyCode,
+            'amount_base' => $this->normalizeOptionalAmount($entry->amount_base),
             'category_id' => $category?->id,
             'memo' => $entry->memo,
         ];
@@ -205,6 +229,15 @@ final class LedgerTransactionService
         return $currencyCode;
     }
 
+    private function normalizeOptionalAmount(int|float|string|null $amount): ?string
+    {
+        if ($amount === null) {
+            return null;
+        }
+
+        return (string) $amount;
+    }
+
     private function assertAccountOwnership(LedgerAccount $account, User $user): void
     {
         if ($account->user_id !== $user->id) {
@@ -217,5 +250,27 @@ final class LedgerTransactionService
         if ($category !== null && $category->user_id !== $user->id) {
             throw LedgerIntegrityException::categoryOwnershipMismatch();
         }
+    }
+
+    private function findTransactionByIdempotencyKey(User $user, ?string $idempotencyKey): ?LedgerTransaction
+    {
+        if ($idempotencyKey === null) {
+            return null;
+        }
+
+        return LedgerTransaction::query()
+            ->where('user_id', $user->id)
+            ->where('idempotency_key', $idempotencyKey)
+            ->with('entries.account')
+            ->first();
+    }
+
+    private function isIdempotencyViolation(QueryException $exception): bool
+    {
+        if ($exception->getCode() !== '23000') {
+            return false;
+        }
+
+        return Str::contains($exception->getMessage(), 'ledger_transactions_user_id_idempotency_key_unique');
     }
 }

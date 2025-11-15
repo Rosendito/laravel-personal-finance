@@ -24,6 +24,9 @@ final class LedgerEntryData extends Data
         #[Nullable, StringType, Size(3)]
         public ?string $currency_code = null,
 
+        #[Nullable, Numeric]
+        public int|float|string|null $amount_base = null,
+
         #[Nullable, IntegerType]
         public ?int $category_id = null,
 
