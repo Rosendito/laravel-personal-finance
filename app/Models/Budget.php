@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Concerns\HasCachedAggregates;
+use App\Enums\CachedAggregateKey;
 use Database\Factories\BudgetFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 final class Budget extends Model
 {
+    use HasCachedAggregates;
+
     /** @use HasFactory<BudgetFactory> */
     use HasFactory;
 
@@ -23,6 +28,13 @@ final class Budget extends Model
     public function allocations(): HasMany
     {
         return $this->hasMany(BudgetAllocation::class);
+    }
+
+    public function currentBalanceAggregate(): MorphOne
+    {
+        return $this->morphOne(CachedAggregate::class, 'aggregatable')
+            ->where('key', CachedAggregateKey::CurrentBalance)
+            ->whereNull('scope');
     }
 
     /**
