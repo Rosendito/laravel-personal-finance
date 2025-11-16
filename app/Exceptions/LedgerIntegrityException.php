@@ -57,4 +57,9 @@ final class LedgerIntegrityException extends RuntimeException
     {
         return new self('Ledger transactions must have entries that sum to zero.');
     }
+
+    public static function mixedBudgetAssignments(): self
+    {
+        return new self('Ledger transactions cannot be linked to multiple budgets.');
+    }
 }

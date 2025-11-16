@@ -39,9 +39,9 @@ final class Category extends Model
         return $this->hasMany(LedgerEntry::class, 'category_id');
     }
 
-    public function budgetAllocations(): HasMany
+    public function budget(): BelongsTo
     {
-        return $this->hasMany(BudgetAllocation::class);
+        return $this->belongsTo(Budget::class);
     }
 
     /**
@@ -52,6 +52,7 @@ final class Category extends Model
         return [
             'user_id' => 'integer',
             'parent_id' => 'integer',
+            'budget_id' => 'integer',
             'name' => 'string',
             'type' => CategoryType::class,
             'is_archived' => 'boolean',

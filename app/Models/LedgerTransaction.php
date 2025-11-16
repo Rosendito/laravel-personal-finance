@@ -20,6 +20,11 @@ final class LedgerTransaction extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function budget(): BelongsTo
+    {
+        return $this->belongsTo(Budget::class);
+    }
+
     public function entries(): HasMany
     {
         return $this->hasMany(LedgerEntry::class, 'transaction_id');
@@ -48,6 +53,7 @@ final class LedgerTransaction extends Model
     {
         return [
             'user_id' => 'integer',
+            'budget_id' => 'integer',
             'description' => 'string',
             'effective_at' => 'datetime',
             'posted_at' => 'date',

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Data\BudgetAllocationStatusData;
+use App\Data\BudgetPeriodStatusData;
 use App\Enums\LedgerAccountType;
 use App\Models\Budget;
-use App\Models\BudgetAllocation;
+use App\Models\BudgetPeriod;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
@@ -42,6 +42,14 @@ describe(BudgetStatusQueryService::class, function (): void {
             ])
             ->create();
 
+        $this->incomeAccount = LedgerAccount::factory()
+            ->for($this->user)
+            ->ofType(LedgerAccountType::Income)
+            ->state([
+                'currency_code' => $this->currency->code,
+            ])
+            ->create();
+
         $this->foodCategory = Category::factory()
             ->expense()
             ->for($this->user)
@@ -56,35 +64,29 @@ describe(BudgetStatusQueryService::class, function (): void {
 
         $this->budget = Budget::factory()
             ->for($this->user)
+            ->state([
+                'name' => 'Monthly Essentials',
+            ])
+            ->create();
+
+        $this->budgetPeriod = BudgetPeriod::factory()
+            ->for($this->budget)
             ->forPeriod('2025-11')
             ->state([
-                'name' => 'November Budget',
-            ])
-            ->create();
-
-        $this->foodAllocation = BudgetAllocation::factory()
-            ->forBudget($this->budget)
-            ->forCategory($this->foodCategory)
-            ->state([
-                'amount' => 300,
+                'amount' => 1_100,
                 'currency_code' => $this->currency->code,
             ])
             ->create();
 
-        $this->rentAllocation = BudgetAllocation::factory()
-            ->forBudget($this->budget)
-            ->forCategory($this->rentCategory)
-            ->state([
-                'amount' => 800,
-                'currency_code' => $this->currency->code,
-            ])
-            ->create();
+        $this->foodCategory->update(['budget_id' => $this->budget->id]);
+        $this->rentCategory->update(['budget_id' => $this->budget->id]);
     });
 
-    it('summarizes budget status per allocation within the budget period', function (): void {
+    it('summarizes budget status per period with transaction snapshots', function (): void {
         $novemberIncome = LedgerTransaction::factory()
             ->for($this->user)
             ->state([
+                'budget_id' => $this->budget->id,
                 'effective_at' => CarbonImmutable::parse('2025-11-05 08:00:00'),
             ])
             ->create();
@@ -108,19 +110,20 @@ describe(BudgetStatusQueryService::class, function (): void {
             ])
             ->create();
 
-        $novemberRent = LedgerTransaction::factory()
-            ->for($this->user)
+        LedgerEntry::factory()
+            ->for($novemberIncome, 'transaction')
+            ->for($this->incomeAccount, 'account')
             ->state([
-                'effective_at' => CarbonImmutable::parse('2025-11-10 12:00:00'),
+                'amount' => -400,
+                'currency_code' => $this->currency->code,
             ])
             ->create();
 
-        LedgerEntry::factory()
-            ->for($novemberRent, 'transaction')
-            ->for($this->assetAccount, 'account')
+        $novemberRent = LedgerTransaction::factory()
+            ->for($this->user)
             ->state([
-                'amount' => -600,
-                'currency_code' => $this->currency->code,
+                'budget_id' => $this->budget->id,
+                'effective_at' => CarbonImmutable::parse('2025-11-10 12:00:00'),
             ])
             ->create();
 
@@ -134,9 +137,19 @@ describe(BudgetStatusQueryService::class, function (): void {
             ])
             ->create();
 
+        LedgerEntry::factory()
+            ->for($novemberRent, 'transaction')
+            ->for($this->assetAccount, 'account')
+            ->state([
+                'amount' => -600,
+                'currency_code' => $this->currency->code,
+            ])
+            ->create();
+
         $decemberSpending = LedgerTransaction::factory()
             ->for($this->user)
             ->state([
+                'budget_id' => $this->budget->id,
                 'effective_at' => CarbonImmutable::parse('2025-12-01 10:00:00'),
             ])
             ->create();
@@ -162,24 +175,23 @@ describe(BudgetStatusQueryService::class, function (): void {
 
         $status = $this->service->periodStatus($this->user, '2025-11');
 
-        $foodStatus = $status->firstWhere('category_id', $this->foodCategory->id);
-        $rentStatus = $status->firstWhere('category_id', $this->rentCategory->id);
+        expect($status)->toHaveCount(1);
 
-        expect($foodStatus)->toBeInstanceOf(BudgetAllocationStatusData::class);
-        expect($foodStatus->budgeted)->toBe('300.000000');
-        expect($foodStatus->spent)->toBe('400.000000');
-        expect($foodStatus->remaining)->toBe('-100.000000');
+        /** @var BudgetPeriodStatusData $summary */
+        $summary = $status->first();
 
-        expect($rentStatus)->toBeInstanceOf(BudgetAllocationStatusData::class);
-        expect($rentStatus->budgeted)->toBe('800.000000');
-        expect($rentStatus->spent)->toBe('600.000000');
-        expect($rentStatus->remaining)->toBe('200.000000');
+        expect($summary)->toBeInstanceOf(BudgetPeriodStatusData::class);
+        expect($summary->budget_id)->toBe($this->budget->id);
+        expect($summary->budgeted)->toBe('1100.000000');
+        expect($summary->spent)->toBe('1000.000000');
+        expect($summary->remaining)->toBe('100.000000');
     });
 
     it('adds a spent_amount subselect for eager loading aggregate data', function (): void {
         $novemberTransaction = LedgerTransaction::factory()
             ->for($this->user)
             ->state([
+                'budget_id' => $this->budget->id,
                 'effective_at' => CarbonImmutable::parse('2025-11-15 15:00:00'),
             ])
             ->create();
@@ -204,7 +216,7 @@ describe(BudgetStatusQueryService::class, function (): void {
             ->create();
 
         $query = Budget::query()->whereKey($this->budget->id);
-        $this->service->addSpentAmountSubselect($query);
+        $this->service->addSpentAmountSubselect($query, '2025-11');
 
         $budgetWithAggregate = $query->first();
 

@@ -4,3 +4,6 @@ alwaysApply: true
 
 - U can use ->where('something', Enum::VALUE), without needing to use ->value
 - ALWAYS, create: concerns, data, rules, contracts, etc etc FROM app root, like: app/Concerns/HasSomeFeature.php NEVER create them like: app/Models/Concerns/HAsSomethingShit.php
+
+- DOn'T TOUCH FILE CLASSES THAT HAVE DEPRECATED ANNOTAION
+- DONT UPDATE REACT WITH INERTIA APP ANYMORE, WE ARE MOVING TO FILAMENT

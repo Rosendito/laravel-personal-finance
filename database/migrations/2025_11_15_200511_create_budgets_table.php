@@ -17,11 +17,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->string('period', 7);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->unique(['user_id', 'period', 'name']);
+            $table->unique(['user_id', 'name']);
         });
     }
 

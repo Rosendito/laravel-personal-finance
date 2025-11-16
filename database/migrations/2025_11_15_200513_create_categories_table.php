@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('categories')->nullOnDelete();
+            $table->foreignId('budget_id')->nullable()->constrained('budgets')->nullOnDelete();
             $table->string('name');
             $table->string('type', 10);
             $table->boolean('is_archived')->default(false);

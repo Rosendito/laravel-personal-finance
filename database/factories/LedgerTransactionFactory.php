@@ -24,6 +24,7 @@ final class LedgerTransactionFactory extends Factory
 
         return [
             'user_id' => User::factory(),
+            'budget_id' => null,
             'description' => fake()->sentence(),
             'effective_at' => $effectiveAt,
             'posted_at' => fake()->boolean(70) ? $effectiveAt->format('Y-m-d') : null,

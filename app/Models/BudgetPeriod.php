@@ -4,24 +4,19 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Database\Factories\BudgetAllocationFactory;
+use Database\Factories\BudgetPeriodFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-final class BudgetAllocation extends Model
+final class BudgetPeriod extends Model
 {
-    /** @use HasFactory<BudgetAllocationFactory> */
+    /** @use HasFactory<BudgetPeriodFactory> */
     use HasFactory;
 
     public function budget(): BelongsTo
     {
         return $this->belongsTo(Budget::class);
-    }
-
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class);
     }
 
     public function currency(): BelongsTo
@@ -36,7 +31,7 @@ final class BudgetAllocation extends Model
     {
         return [
             'budget_id' => 'integer',
-            'category_id' => 'integer',
+            'period' => 'string',
             'amount' => 'decimal:6',
             'currency_code' => 'string',
             'created_at' => 'datetime',
@@ -44,3 +39,4 @@ final class BudgetAllocation extends Model
         ];
     }
 }
+

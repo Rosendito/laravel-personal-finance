@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create('ledger_transactions', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('budget_id')->nullable()->constrained('budgets')->nullOnDelete();
             $table->string('description');
             $table->dateTime('effective_at');
             $table->date('posted_at')->nullable();

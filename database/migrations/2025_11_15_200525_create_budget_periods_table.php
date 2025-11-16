@@ -13,16 +13,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('budget_allocations', function (Blueprint $table): void {
+        Schema::create('budget_periods', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('budget_id')->constrained('budgets')->cascadeOnDelete();
-            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+            $table->string('period', 7);
             $table->decimal('amount', 20, 6);
             $table->string('currency_code', 3);
             $table->timestamps();
 
             $table->foreign('currency_code')->references('code')->on('currencies');
-            $table->unique(['budget_id', 'category_id']);
+            $table->unique(['budget_id', 'period']);
         });
     }
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('budget_allocations');
+        Schema::dropIfExists('budget_periods');
     }
 };

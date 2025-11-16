@@ -13,7 +13,7 @@ use Spatie\LaravelData\Data;
 use Spatie\TypeScriptTransformer\Attributes\TypeScript;
 
 #[TypeScript]
-final class BudgetAllocationStatusData extends Data
+final class BudgetPeriodStatusData extends Data
 {
     public function __construct(
         #[Required, IntegerType]
@@ -24,15 +24,6 @@ final class BudgetAllocationStatusData extends Data
 
         #[Required, StringType, Size(7)]
         public string $period,
-
-        #[Required, IntegerType]
-        public int $allocation_id,
-
-        #[Required, IntegerType]
-        public int $category_id,
-
-        #[Required, StringType]
-        public string $category_name,
 
         #[Required, StringType, Size(3)]
         public string $currency_code,

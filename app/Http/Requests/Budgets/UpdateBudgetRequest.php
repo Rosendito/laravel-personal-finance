@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Budgets;
 
+use App\Concerns\ResolvesActingUser;
 use App\Models\Budget;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-final class UpdateBudgetRequest extends BudgetRequest
+final class UpdateBudgetRequest extends FormRequest
 {
+    use ResolvesActingUser;
+
     public function authorize(): bool
     {
         $budget = $this->route('budget');
@@ -29,7 +33,6 @@ final class UpdateBudgetRequest extends BudgetRequest
         /** @var Budget $budget */
         $budget = $this->route('budget');
         $actingUser = $this->actingUser();
-        $period = $this->string('period')->value() ?? $budget->period;
 
         return [
             'name' => [
@@ -41,10 +44,8 @@ final class UpdateBudgetRequest extends BudgetRequest
                     ->where(
                         static fn (QueryBuilder $query): QueryBuilder => $query
                             ->where('user_id', $actingUser->id)
-                            ->where('period', $period)
                     ),
             ],
-            'period' => ['required', 'date_format:Y-m'],
             'is_active' => ['required', 'boolean'],
         ];
     }

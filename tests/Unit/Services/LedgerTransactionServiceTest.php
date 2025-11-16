@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Data\LedgerTransactionData;
 use App\Enums\LedgerAccountType;
 use App\Exceptions\LedgerIntegrityException;
+use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
@@ -203,6 +204,82 @@ describe(LedgerTransactionService::class, function (): void {
         expect($transaction->entries->first()->memo)->toBe('Rent payment');
         expect($transaction->entries->last()->memo)->toBe('Rent offset');
         expect($transaction->entries->firstWhere('category_id', $category->id))->not->toBeNull();
+    });
+
+    it('snapshots the budget assigned to referenced categories', function (): void {
+        /** @var callable $makeTransactionData */
+        $makeTransactionData = $this->makeTransactionData;
+
+        $budget = Budget::factory()
+            ->for($this->user)
+            ->state(['name' => 'Food'])
+            ->create();
+
+        $category = Category::factory()
+            ->expense()
+            ->for($this->user)
+            ->state([
+                'name' => 'Dining',
+                'budget_id' => $budget->id,
+            ])
+            ->create();
+
+        $data = $makeTransactionData(entries: [
+            [
+                'account_id' => $this->assetAccount->id,
+                'amount' => -1_000,
+            ],
+            [
+                'account_id' => $this->incomeAccount->id,
+                'amount' => 1_000,
+                'category_id' => $category->id,
+            ],
+        ]);
+
+        $transaction = $this->service->create(
+            $this->user,
+            $data,
+        );
+
+        expect($transaction->budget_id)->toBe($budget->id);
+    });
+
+    it('rejects transactions that mix categories from different budgets', function (): void {
+        /** @var callable $makeTransactionData */
+        $makeTransactionData = $this->makeTransactionData;
+
+        $foodBudget = Budget::factory()->for($this->user)->state(['name' => 'Food'])->create();
+        $rentBudget = Budget::factory()->for($this->user)->state(['name' => 'Rent'])->create();
+
+        $foodCategory = Category::factory()
+            ->expense()
+            ->for($this->user)
+            ->state(['budget_id' => $foodBudget->id])
+            ->create();
+
+        $rentCategory = Category::factory()
+            ->expense()
+            ->for($this->user)
+            ->state(['budget_id' => $rentBudget->id])
+            ->create();
+
+        $data = $makeTransactionData(entries: [
+            [
+                'account_id' => $this->assetAccount->id,
+                'amount' => -700,
+                'category_id' => $foodCategory->id,
+            ],
+            [
+                'account_id' => $this->incomeAccount->id,
+                'amount' => 700,
+                'category_id' => $rentCategory->id,
+            ],
+        ]);
+
+        expect(fn (): mixed => $this->service->create(
+            $this->user,
+            $data,
+        ))->toThrow(LedgerIntegrityException::class, 'multiple budgets');
     });
 
     it('persists optional amount_base values when provided', function (): void {

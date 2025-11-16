@@ -25,9 +25,9 @@ final class Budget extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function allocations(): HasMany
+    public function periods(): HasMany
     {
-        return $this->hasMany(BudgetAllocation::class);
+        return $this->hasMany(BudgetPeriod::class);
     }
 
     public function currentBalanceAggregate(): MorphOne
@@ -45,7 +45,6 @@ final class Budget extends Model
         return [
             'user_id' => 'integer',
             'name' => 'string',
-            'period' => 'string',
             'is_active' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',

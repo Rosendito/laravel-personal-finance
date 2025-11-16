@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Data\AccountBalanceData;
-use App\Data\BudgetAllocationStatusData;
+use App\Data\BudgetPeriodStatusData;
 use App\Models\User;
 use App\Services\Queries\AccountBalanceQueryService;
 use App\Services\Queries\BudgetStatusQueryService;
@@ -16,6 +16,9 @@ use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * @deprecated
+ */
 final class DashboardController extends Controller
 {
     public function __invoke(
@@ -40,7 +43,7 @@ final class DashboardController extends Controller
                 static fn (AccountBalanceData $data): array => $data->toArray()
             ),
             'budgetStatuses' => $budgetData->map(
-                static fn (BudgetAllocationStatusData $data): array => $data->toArray()
+                static fn (BudgetPeriodStatusData $data): array => $data->toArray()
             ),
             'incomeSummary' => $incomeData->toArray(),
         ]);

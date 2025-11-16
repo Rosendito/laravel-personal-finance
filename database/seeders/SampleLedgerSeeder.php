@@ -7,7 +7,7 @@ namespace Database\Seeders;
 use App\Enums\CategoryType;
 use App\Enums\LedgerAccountType;
 use App\Models\Budget;
-use App\Models\BudgetAllocation;
+use App\Models\BudgetPeriod;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
@@ -39,35 +39,38 @@ final class SampleLedgerSeeder extends Seeder
         $salaryCategory = $this->createCategory($user, CategoryType::Income, 'Salary');
         $groceriesCategory = $this->createCategory($user, CategoryType::Expense, 'Groceries');
 
-        $salaryTransaction = $this->createTransaction($user, 'Monthly Salary', CarbonImmutable::now()->startOfMonth()->addDay());
-        $this->createEntry($salaryTransaction, $checkingAccount, amount: 5_000.00, currency: $usd->code);
-        $this->createEntry($salaryTransaction, $incomeAccount, amount: -5_000.00, currency: $usd->code, categoryId: $salaryCategory->id);
-
-        $groceriesTransaction = $this->createTransaction($user, 'Grocery Run', CarbonImmutable::now()->startOfMonth()->addDays(3));
-        $this->createEntry($groceriesTransaction, $expenseAccount, amount: 250.00, currency: $usd->code, categoryId: $groceriesCategory->id);
-        $this->createEntry($groceriesTransaction, $checkingAccount, amount: -250.00, currency: $usd->code);
-
-        $creditCardPayment = $this->createTransaction($user, 'Credit Card Payment', CarbonImmutable::now()->startOfMonth()->addDays(5));
-        $this->createEntry($creditCardPayment, $creditCardAccount, amount: -400.00, currency: $usd->code);
-        $this->createEntry($creditCardPayment, $checkingAccount, amount: 400.00, currency: $usd->code);
-
         $budget = Budget::factory()
             ->for($user)
-            ->forPeriod(CarbonImmutable::now()->format('Y-m'))
             ->state([
                 'name' => 'Monthly Budget',
                 'is_active' => true,
             ])
             ->create();
 
-        BudgetAllocation::factory()
-            ->forBudget($budget)
-            ->forCategory($groceriesCategory)
+        $currentPeriod = CarbonImmutable::now()->format('Y-m');
+
+        BudgetPeriod::factory()
+            ->for($budget)
+            ->forPeriod($currentPeriod)
             ->state([
                 'amount' => 600.00,
                 'currency_code' => $usd->code,
             ])
             ->create();
+
+        $groceriesCategory->update(['budget_id' => $budget->id]);
+
+        $salaryTransaction = $this->createTransaction($user, 'Monthly Salary', CarbonImmutable::now()->startOfMonth()->addDay());
+        $this->createEntry($salaryTransaction, $checkingAccount, amount: 5_000.00, currency: $usd->code);
+        $this->createEntry($salaryTransaction, $incomeAccount, amount: -5_000.00, currency: $usd->code, categoryId: $salaryCategory->id);
+
+        $groceriesTransaction = $this->createTransaction($user, 'Grocery Run', CarbonImmutable::now()->startOfMonth()->addDays(3), $budget);
+        $this->createEntry($groceriesTransaction, $expenseAccount, amount: 250.00, currency: $usd->code, categoryId: $groceriesCategory->id);
+        $this->createEntry($groceriesTransaction, $checkingAccount, amount: -250.00, currency: $usd->code);
+
+        $creditCardPayment = $this->createTransaction($user, 'Credit Card Payment', CarbonImmutable::now()->startOfMonth()->addDays(5));
+        $this->createEntry($creditCardPayment, $creditCardAccount, amount: -400.00, currency: $usd->code);
+        $this->createEntry($creditCardPayment, $checkingAccount, amount: 400.00, currency: $usd->code);
     }
 
     private function createAccount(User $user, LedgerAccountType $type, string $name, string $currency): LedgerAccount
@@ -95,7 +98,7 @@ final class SampleLedgerSeeder extends Seeder
         return $factory->create();
     }
 
-    private function createTransaction(User $user, string $description, CarbonImmutable $effectiveAt): LedgerTransaction
+    private function createTransaction(User $user, string $description, CarbonImmutable $effectiveAt, ?Budget $budget = null): LedgerTransaction
     {
         return LedgerTransaction::factory()
             ->for($user)
@@ -106,6 +109,7 @@ final class SampleLedgerSeeder extends Seeder
                 'reference' => null,
                 'source' => 'manual',
                 'idempotency_key' => null,
+                'budget_id' => $budget?->id,
             ])
             ->create();
     }

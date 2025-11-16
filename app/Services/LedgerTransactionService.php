@@ -36,16 +36,18 @@ final class LedgerTransactionService
         $accounts = $this->loadAccounts($entryCollection);
         $categories = $this->loadCategories($entryCollection);
 
+        $budgetId = $this->determineBudgetId($entryCollection, $categories);
+
         $normalizedEntries = $entryCollection
             ->map(fn (LedgerEntryData $entry): array => $this->normalizeEntry($entry, $user, $accounts, $categories))
             ->all();
 
         try {
-            return DB::transaction(function () use ($user, $transactionData, $normalizedEntries): LedgerTransaction {
+            return DB::transaction(function () use ($user, $transactionData, $normalizedEntries, $budgetId): LedgerTransaction {
                 $transaction = new LedgerTransaction();
 
                 $transaction->forceFill(
-                    $this->buildTransactionAttributes($transactionData, $user),
+                    $this->buildTransactionAttributes($transactionData, $user, $budgetId),
                 );
 
                 $transaction->save();
@@ -160,7 +162,47 @@ final class LedgerTransactionService
         ];
     }
 
-    private function buildTransactionAttributes(LedgerTransactionData $transactionData, User $user): array
+    /**
+     * @param  Collection<int, LedgerEntryData>  $entries
+     * @param  Collection<int, Category>  $categories
+     */
+    private function determineBudgetId(Collection $entries, Collection $categories): ?int
+    {
+        $categoryIds = $entries
+            ->map(fn (LedgerEntryData $entry): ?int => $entry->category_id)
+            ->filter()
+            ->unique();
+
+        if ($categoryIds->isEmpty()) {
+            return null;
+        }
+
+        $budgetIds = $categoryIds
+            ->map(function (int $categoryId) use ($categories): ?int {
+                /** @var Category|null $category */
+                $category = $categories->get($categoryId);
+
+                if ($category === null) {
+                    throw LedgerIntegrityException::categoryNotFound($categoryId);
+                }
+
+                return $category->budget_id;
+            })
+            ->filter(static fn (?int $budgetId): bool => $budgetId !== null)
+            ->unique()
+            ->values();
+
+        if ($budgetIds->count() > 1) {
+            throw LedgerIntegrityException::mixedBudgetAssignments();
+        }
+
+        /** @var int|null $budgetId */
+        $budgetId = $budgetIds->first();
+
+        return $budgetId;
+    }
+
+    private function buildTransactionAttributes(LedgerTransactionData $transactionData, User $user, ?int $budgetId): array
     {
         return [
             'description' => $transactionData->description,
@@ -170,6 +212,7 @@ final class LedgerTransactionService
             'source' => $transactionData->source,
             'idempotency_key' => $transactionData->idempotency_key,
             'user_id' => $user->id,
+            'budget_id' => $budgetId,
         ];
     }
 
