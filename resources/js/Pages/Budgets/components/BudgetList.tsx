@@ -14,7 +14,7 @@ type BudgetListProps = {
 export const BudgetList = ({ budgets, onEdit, onDelete }: BudgetListProps) => {
     if (budgets.length === 0) {
         return (
-            <div className="rounded-[var(--radius-lg)] border border-dashed border-ink/20 px-4 py-8 text-center text-sm text-ink-muted">
+            <div className="rounded-(--radius-lg) border border-dashed border-ink/20 px-4 py-8 text-center text-sm text-ink-muted">
                 Aún no tienes presupuestos para este periodo. Crea el primero
                 para comenzar a monitorear tus límites mensuales.
             </div>
@@ -22,8 +22,8 @@ export const BudgetList = ({ budgets, onEdit, onDelete }: BudgetListProps) => {
     }
 
     return (
-        <div className="overflow-hidden rounded-[var(--radius-lg)] border border-ink/10">
-            <div className="hidden grid-cols-[2fr,1fr,1fr,1fr,auto] bg-surface-muted/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted md:grid">
+        <div className="overflow-hidden rounded-(--radius-lg) border border-ink/10">
+            <div className="hidden grid-cols-[2fr_1fr_1fr_1fr_auto] bg-surface-muted/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted md:grid">
                 <span>Nombre</span>
                 <span>Periodo</span>
                 <span>Estado</span>
@@ -34,7 +34,7 @@ export const BudgetList = ({ budgets, onEdit, onDelete }: BudgetListProps) => {
                 {budgets.map((budget) => (
                     <div
                         key={budget.id}
-                        className="grid grid-cols-1 gap-4 px-4 py-4 text-sm md:grid-cols-[2fr,1fr,1fr,1fr,auto] md:items-center"
+                        className="grid grid-cols-1 gap-4 px-4 py-4 text-sm md:grid-cols-[2fr_1fr_1fr_1fr_auto] md:items-center"
                     >
                         <div>
                             <p className="font-semibold text-ink">
