@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
-class HandleInertiaRequests extends Middleware
+final class HandleInertiaRequests extends Middleware
 {
     /**
      * The root template that's loaded on the first page visit.
@@ -37,7 +40,43 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            //
+            'appName' => config('app.name', 'Personal Finance'),
+            'initialTheme' => $request->cookie('theme', 'system'),
+            'viewer' => static function () use ($request): ?array {
+                $user = $request->user() ?? User::query()->select(['name', 'email'])->first();
+
+                return $user?->only(['name', 'email']);
+            },
+            'primaryNavigation' => [
+                [
+                    'id' => 'dashboard',
+                    'label' => 'Overview',
+                    'description' => 'Resumen general de tus finanzas.',
+                    'href' => route('dashboard', absolute: false),
+                    'icon' => 'layout-dashboard',
+                ],
+                [
+                    'id' => 'accounts',
+                    'label' => 'Accounts',
+                    'description' => 'Saldos y actividad por cuenta.',
+                    'href' => route('accounts.index', absolute: false),
+                    'icon' => 'wallet',
+                ],
+                [
+                    'id' => 'transactions',
+                    'label' => 'Transactions',
+                    'description' => 'Movimientos recientes y filtros.',
+                    'href' => route('transactions.index', absolute: false),
+                    'icon' => 'arrows-left-right',
+                ],
+                [
+                    'id' => 'budgets',
+                    'label' => 'Budgets',
+                    'description' => 'Controla objetivos y asignaciones.',
+                    'href' => route('budgets.index', absolute: false),
+                    'icon' => 'piggy-bank',
+                ],
+            ],
         ];
     }
 }
