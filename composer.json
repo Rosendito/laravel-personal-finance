@@ -9,7 +9,7 @@
         "php": "^8.4.0",
         "filament/filament": "^4.2.2",
         "laravel/framework": "^12.38.1",
-        "nunomaduro/essentials": "^1.0.1",
+        "nunomaduro/essentials": "^1.0",
         "spatie/enum": "^3.13",
         "spatie/laravel-data": "^4.18",
         "spatie/laravel-typescript-transformer": "^2.5.2"
