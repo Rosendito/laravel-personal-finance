@@ -7,163 +7,45 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source "../**/*.blade.php";
-@source "../**/*.ts";
-@source "../**/*.tsx";
-
-@theme {
-    --font-sans:
-        "Inter", "Nunito", "Quicksand", "SF Pro Rounded", ui-sans-serif,
-        system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-        "Segoe UI Symbol", "Noto Color Emoji";
-
-    --color-background: hsl(var(--background));
-    --color-foreground: hsl(var(--foreground));
-    --color-muted: hsl(var(--muted));
-    --color-muted-foreground: hsl(var(--muted-foreground));
-    --color-popover: hsl(var(--popover));
-    --color-popover-foreground: hsl(var(--popover-foreground));
-    --color-card: hsl(var(--card));
-    --color-card-foreground: hsl(var(--card-foreground));
-    --color-border: hsl(var(--border));
-    --color-input: hsl(var(--input));
-    --color-primary: hsl(var(--primary));
-    --color-primary-muted: color-mix(in oklab, hsl(var(--primary)) 80%, white);
-    --color-primary-foreground: hsl(var(--primary-foreground));
-    --color-secondary: hsl(var(--secondary));
-    --color-secondary-foreground: hsl(var(--secondary-foreground));
-    --color-accent: hsl(var(--accent));
-    --color-accent-foreground: hsl(var(--accent-foreground));
-    --color-destructive: hsl(var(--destructive));
-    --color-destructive-foreground: hsl(var(--destructive-foreground));
-    --color-ring: hsl(var(--ring));
-    --color-chart-1: hsl(var(--chart-1));
-    --color-chart-2: hsl(var(--chart-2));
-    --color-chart-3: hsl(var(--chart-3));
-    --color-chart-4: hsl(var(--chart-4));
-    --color-chart-5: hsl(var(--chart-5));
-
-    --color-ink: hsl(var(--foreground));
-    --color-ink-muted: hsl(var(--muted-foreground));
-    --color-cream: hsl(var(--background));
-    --color-surface: hsl(var(--card));
-    --color-surface-muted: hsl(var(--muted));
-    --color-success: hsl(var(--chart-5));
-    --color-warning: hsl(var(--chart-4));
-    --color-danger: hsl(var(--destructive));
-
-    --radius-lg: calc(var(--radius) * 3);
-    --radius-md: calc(var(--radius) * 2);
-    --radius-sm: var(--radius);
-    --radius-pill: 9999px;
-}
 
 @layer base {
     :root {
         color-scheme: light;
-        --background: 190 69% 98%;
-        --foreground: 190 71% 1%;
-        --muted: 10 10% 95%;
-        --muted-foreground: 10 5% 37%;
-        --popover: 190 69% 98%;
-        --popover-foreground: 190 71% 1%;
-        --card: 190 69% 97%;
-        --card-foreground: 0 0% 0%;
-        --border: 190 9% 89%;
-        --input: 190 9% 89%;
-        --primary: 190 90% 67%;
-        --primary-foreground: 190 90% 7%;
-        --secondary: 10 90% 67%;
-        --secondary-foreground: 10 90% 7%;
-        --accent: 10 90% 67%;
-        --accent-foreground: 10 90% 7%;
-        --destructive: 0 88% 26%;
-        --destructive-foreground: 0 88% 86%;
-        --ring: 190 90% 67%;
-        --chart-1: 190 90% 67%;
-        --chart-2: 10 90% 67%;
-        --chart-3: 10 90% 67%;
-        --chart-4: 10 90% 70%;
-        --chart-5: 190 93% 67%;
-        --radius: 0.5rem;
-        --shadow-card: 0 12px 40px rgba(16, 20, 40, 0.08);
     }
 
     :root.dark,
     :root[data-theme="dark"] {
         color-scheme: dark;
-        --background: 190 39% 4%;
-        --foreground: 190 28% 98%;
-        --muted: 10 10% 5%;
-        --muted-foreground: 10 5% 63%;
-        --popover: 190 39% 4%;
-        --popover-foreground: 190 28% 98%;
-        --card: 190 39% 5%;
-        --card-foreground: 190 28% 99%;
-        --border: 190 9% 13%;
-        --input: 190 9% 13%;
-        --primary: 190 90% 67%;
-        --primary-foreground: 190 90% 7%;
-        --secondary: 10 90% 67%;
-        --secondary-foreground: 10 90% 7%;
-        --accent: 10 90% 67%;
-        --accent-foreground: 10 90% 7%;
-        --destructive: 0 88% 54%;
-        --destructive-foreground: 0 0% 100%;
-        --ring: 190 90% 67%;
-        --chart-1: 190 90% 67%;
-        --chart-2: 10 90% 67%;
-        --chart-3: 10 90% 67%;
-        --chart-4: 10 90% 70%;
-        --chart-5: 190 93% 67%;
-        --radius: 0.5rem;
-        --shadow-card: 0 12px 30px rgba(0, 0, 0, 0.35);
     }
-}
 
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-}
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
 
-body {
-    margin: 0;
-    font-family: var(--font-sans);
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    min-height: 100vh;
-}
+    body {
+        margin: 0;
+        font-family:
+            "Inter", "Nunito", ui-sans-serif, system-ui, sans-serif,
+            "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+            "Noto Color Emoji";
+        background-color: #f5f5f4;
+        color: #0f172a;
+        min-height: 100vh;
+    }
 
-::selection {
-    background-color: color-mix(
-        in srgb,
-        var(--color-secondary) 85%,
-        transparent
-    );
-    color: #fff;
-}
+    ::selection {
+        background-color: rgba(249, 115, 22, 0.85);
+        color: #fff;
+    }
 
-a {
-    color: inherit;
-    text-decoration: none;
-}
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
 
-button {
-    font-family: inherit;
-}
-
-.app-shell {
-    min-height: 100vh;
-    display: flex;
-    background-image:
-        radial-gradient(
-            circle at 20% 20%,
-            color-mix(in srgb, hsl(var(--primary)) 20%, transparent),
-            transparent 45%
-        ),
-        radial-gradient(
-            circle at 80% 0%,
-            color-mix(in srgb, hsl(var(--secondary)) 20%, transparent),
-            transparent 40%
-        );
+    button {
+        font-family: inherit;
+    }
 }

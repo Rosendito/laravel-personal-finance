@@ -10,7 +10,6 @@
     "license": "MIT",
     "require": {
         "php": "^8.4.0",
-        "inertiajs/inertia-laravel": "^2.0.10",
         "laravel/framework": "^12.38.1",
         "nunomaduro/essentials": "^1.0.1",
         "spatie/enum": "^3.13",
