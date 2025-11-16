@@ -1,4 +1,6 @@
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
+import type { FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -10,78 +12,176 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import {
+    BudgetFilters,
+    type BudgetFiltersValues,
+} from "@/Pages/Budgets/components/BudgetFilters";
+import { BudgetFormDialog } from "@/Pages/Budgets/components/BudgetFormDialog";
+import { BudgetList } from "@/Pages/Budgets/components/BudgetList";
+import { BudgetStats } from "@/Pages/Budgets/components/BudgetStats";
+import type { Budget, BudgetsPageProps } from "@/Pages/Budgets/types";
 
-const BudgetsIndex = () => {
+const BudgetsIndex = ({
+    budgets,
+    stats,
+    filters,
+    periodOptions,
+    defaultPeriod,
+}: BudgetsPageProps) => {
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+    const [filterForm, setFilterForm] = useState<BudgetFiltersValues>({
+        search: filters.search ?? "",
+        period: filters.period ?? "",
+    });
+
+    useEffect(() => {
+        setFilterForm({
+            search: filters.search ?? "",
+            period: filters.period ?? "",
+        });
+    }, [filters.search, filters.period]);
+
+    const availablePeriods = useMemo(() => {
+        const options = [...periodOptions];
+
+        if (options.length === 0 && defaultPeriod) {
+            options.push(defaultPeriod);
+        } else if (defaultPeriod && !options.includes(defaultPeriod)) {
+            options.unshift(defaultPeriod);
+        }
+
+        return Array.from(new Set(options));
+    }, [periodOptions, defaultPeriod]);
+
+    const handleFilterSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        router.get(
+            "/budgets",
+            {
+                search: filterForm.search || undefined,
+                period: filterForm.period || undefined,
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
+
+    const handleResetFilters = () => {
+        setFilterForm({ search: "", period: "" });
+        router.get(
+            "/budgets",
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
+
+    const handleDelete = (budget: Budget) => {
+        if (
+            !confirm(
+                `¿Seguro que deseas eliminar el presupuesto “${budget.name}”?`,
+            )
+        ) {
+            return;
+        }
+
+        router.delete(`/budgets/${budget.id}`, {
+            preserveScroll: true,
+        });
+    };
+
     return (
         <AppShell>
             <Head title="Budgets" />
             <PageHeader
                 eyebrow="Presupuestos"
                 title="Planifica tus categorías"
-                description="Define montos por categoría, rastrea el consumo y recibe alertas antes de excederte."
+                description="Crea presupuestos mensuales, actualízalos en segundos y compara periodos sin salir de esta vista."
                 actions={
-                    <div className="flex flex-wrap gap-3">
-                        <Button variant="outline">Duplicar periodo</Button>
-                        <Button>Nuevo presupuesto</Button>
-                    </div>
+                    <Button onClick={() => setCreateModalOpen(true)}>
+                        Nuevo presupuesto
+                    </Button>
                 }
             />
 
-            <div className="mt-8 grid gap-6 lg:grid-cols-2">
+            <div className="mt-8 space-y-6">
+                <BudgetStats stats={stats} />
+
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Resumen del periodo</CardTitle>
-                        <CardDescription>
-                            Configura montos objetivo mensuales para tener
-                            visibilidad de tus límites.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 text-sm text-ink-muted">
-                        <p>
-                            Cuando agregues presupuestos los verás aquí
-                            organizados por categoría. También podrás
-                            duplicarlos para futuros periodos y simular
-                            escenarios.
-                        </p>
-                        <div className="rounded-[var(--radius-lg)] bg-surface-muted/80 px-4 py-5">
-                            <p className="text-xs uppercase tracking-[0.3em] text-secondary">
-                                Ejemplo
-                            </p>
-                            <p className="mt-2 text-base font-semibold text-ink">
-                                Gastos fijos
-                            </p>
-                            <Progress value={45} className="mt-4" />
-                            <div className="mt-2 flex items-center justify-between text-xs">
-                                <span>450 USD gastados</span>
-                                <span>1,000 USD objetivo</span>
-                            </div>
+                    <CardHeader className="gap-4 lg:flex lg:items-end lg:justify-between">
+                        <div>
+                            <CardTitle>Presupuestos activos</CardTitle>
+                            <CardDescription>
+                                Filtra por periodo o nombre y edita desde la
+                                misma tabla usando los modales.
+                            </CardDescription>
                         </div>
+                        <BudgetFilters
+                            values={filterForm}
+                            availablePeriods={availablePeriods}
+                            onSubmit={handleFilterSubmit}
+                            onReset={handleResetFilters}
+                            onChange={(values) => setFilterForm(values)}
+                        />
+                    </CardHeader>
+                    <CardContent>
+                        <BudgetList
+                            budgets={budgets}
+                            onEdit={setEditingBudget}
+                            onDelete={handleDelete}
+                        />
                     </CardContent>
                 </Card>
-                <Card className="bg-surface-muted/50">
+
+                <Card className="bg-surface-muted/60">
                     <CardHeader>
-                        <CardTitle>Sugerencias</CardTitle>
+                        <CardTitle>Tips para periodos</CardTitle>
                         <CardDescription>
-                            Usa categorías cortas y específicas para leer tu
-                            tablero sin esfuerzo.
+                            Usa un único modal para crear o editar y mantén los
+                            mismos campos para disminuir errores.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm text-ink-muted">
-                        <p>Al crear un presupuesto define:</p>
-                        <ul className="list-disc space-y-2 pl-5">
-                            <li>
-                                Nombre claro: &ldquo;Supermercado&rdquo;,
-                                &ldquo;Suscripciones&rdquo;, etc.
-                            </li>
-                            <li>
-                                Límite mensual: ajusta según tu promedio real.
-                            </li>
-                            <li>Objetivo: marca si es esencial o ahorro.</li>
-                        </ul>
+                        <p>
+                            - Define periodos YYYY-MM (ej. 2025-02) para poder
+                            duplicar rápidamente hacia los siguientes meses.
+                        </p>
+                        <p>
+                            - Activa o archiva según tu flujo: puedes clonar un
+                            presupuesto archivado usando el modal de edición.
+                        </p>
+                        <p>
+                            - Si trabajas con varias monedas agrega el sufijo en
+                            el nombre, por ejemplo “Renta · USD”.
+                        </p>
                     </CardContent>
                 </Card>
             </div>
+
+            <BudgetFormDialog
+                mode="create"
+                open={createModalOpen}
+                onOpenChange={(open) => setCreateModalOpen(open)}
+                defaultPeriod={filterForm.period || defaultPeriod}
+            />
+
+            <BudgetFormDialog
+                mode="edit"
+                budget={editingBudget}
+                open={editingBudget !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setEditingBudget(null);
+                    }
+                }}
+                defaultPeriod={editingBudget?.period ?? defaultPeriod}
+            />
         </AppShell>
     );
 };
