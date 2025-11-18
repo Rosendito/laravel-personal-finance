@@ -30,7 +30,7 @@ final class BudgetStatusQueryService
                 'bp.currency_code',
             ])
             ->selectRaw('bp.amount as budgeted')
-            ->selectRaw("COALESCE(SUM(CASE WHEN c.type = ? THEN e.amount ELSE 0 END), 0) as spent", [
+            ->selectRaw('COALESCE(SUM(CASE WHEN c.type = ? THEN e.amount ELSE 0 END), 0) as spent', [
                 CategoryType::Expense->value,
             ])
             ->selectRaw('(bp.amount - COALESCE(SUM(CASE WHEN c.type = ? THEN e.amount ELSE 0 END), 0)) as remaining', [

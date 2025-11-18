@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     /*
      * The paths where typescript-transformer will look for PHP classes
@@ -40,7 +42,7 @@ return [
      */
 
     'default_type_replacements' => [
-        DateTime::class => 'string',
+        DateTimeImmutable::class => 'string',
         DateTimeImmutable::class => 'string',
         Carbon\CarbonInterface::class => 'string',
         Carbon\CarbonImmutable::class => 'string',

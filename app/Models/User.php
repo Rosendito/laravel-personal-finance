@@ -12,6 +12,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * @property-read int $id
@@ -38,6 +39,14 @@ final class User extends Authenticatable implements FilamentUser, MustVerifyEmai
 
     public function canAccessPanel(Panel $panel): bool
     {
+        logger()->info('canAccessPanel called', [
+            'panel_id' => $panel->getId(),
+            'user_id' => $this->id,
+            'panel_auth_guard' => $panel->getAuthGuard(),
+            'guard_web_user_id' => Auth::guard('web')->id(),
+            'default_guard_user' => Auth::id(),
+        ]);
+
         return true;
     }
 

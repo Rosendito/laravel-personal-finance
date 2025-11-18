@@ -38,4 +38,3 @@ final class BudgetPeriodFactory extends Factory
         ]);
     }
 }
-

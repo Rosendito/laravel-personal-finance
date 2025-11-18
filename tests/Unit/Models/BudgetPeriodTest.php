@@ -31,4 +31,3 @@ describe(BudgetPeriod::class, function (): void {
         expect($period->currency->is($currency))->toBeTrue();
     });
 });
-
