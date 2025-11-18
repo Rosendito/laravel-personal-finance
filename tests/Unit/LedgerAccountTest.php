@@ -11,7 +11,7 @@ describe(LedgerAccount::class, function (): void {
     it('automatically creates fundamental accounts for new currencies', function (): void {
         // 1. Setup: Ensure USD (default) exists (handled by global setup mostly, but consistent here)
         // Currency::factory()->create(['code' => 'USD']); // REMOVED to avoid dupes with global setup
-        
+
         Currency::factory()->create(['code' => 'EUR']);
 
         // 2. Create User -> Should trigger InitializeUserSpace -> Creates USD accounts
@@ -68,9 +68,13 @@ describe(LedgerAccount::class, function (): void {
     it('respects configured default currency', function (): void {
         // Configurar USDT como default
         config(['finance.currency.default' => 'USDT']);
-        
-        Currency::factory()->create(['code' => 'USDT']);
-        
+
+        // Ensure USDT exists (may already exist from migration)
+        Currency::query()->firstOrCreate(
+            ['code' => 'USDT'],
+            ['precision' => 2]
+        );
+
         $user = User::factory()->create();
 
         // Verificar que se crearon cuentas USDT
