@@ -6,6 +6,7 @@ use App\Data\LedgerTransactionData;
 use App\Enums\LedgerAccountType;
 use App\Exceptions\LedgerIntegrityException;
 use App\Models\Budget;
+use App\Models\BudgetPeriod;
 use App\Models\Category;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
@@ -215,6 +216,16 @@ describe(LedgerTransactionService::class, function (): void {
             ->state(['name' => 'Food'])
             ->create();
 
+        $periodStart = Date::now()->startOfMonth();
+
+        $period = BudgetPeriod::factory()
+            ->for($budget)
+            ->startingAt($periodStart, $periodStart->copy()->addMonth())
+            ->state([
+                'currency_code' => $this->currency->code,
+            ])
+            ->create();
+
         $category = Category::factory()
             ->expense()
             ->for($this->user)
@@ -241,7 +252,7 @@ describe(LedgerTransactionService::class, function (): void {
             $data,
         );
 
-        expect($transaction->budget_id)->toBe($budget->id);
+        expect($transaction->budget_period_id)->toBe($period->id);
     });
 
     it('rejects transactions that mix categories from different budgets', function (): void {

@@ -7,6 +7,8 @@ namespace Database\Factories;
 use App\Models\Budget;
 use App\Models\BudgetPeriod;
 use App\Models\Currency;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,20 +23,40 @@ final class BudgetPeriodFactory extends Factory
      */
     public function definition(): array
     {
-        $period = fake()->dateTimeBetween('-3 months', '+3 months')->format('Y-m');
+        $start = CarbonImmutable::createFromMutable(fake()->dateTimeBetween('-3 months', '+3 months'))
+            ->startOfDay();
+        $end = $start->addDays(fake()->numberBetween(7, 45));
 
         return [
             'budget_id' => Budget::factory(),
-            'period' => $period,
+            'start_at' => $start->toDateString(),
+            'end_at' => $end->toDateString(),
             'amount' => fake()->randomFloat(2, 50, 5_000),
             'currency_code' => Currency::factory(),
         ];
     }
 
-    public function forPeriod(string $period): self
+    public function startingAt(CarbonInterface|string $start, CarbonInterface|string|null $end = null): self
     {
+        $startDate = $this->resolveDate($start);
+        $endDate = $end === null ? $startDate->addMonth() : $this->resolveDate($end);
+
+        if ($endDate->lessThanOrEqualTo($startDate)) {
+            $endDate = $startDate->addDay();
+        }
+
         return $this->state(fn (): array => [
-            'period' => $period,
+            'start_at' => $startDate->toDateString(),
+            'end_at' => $endDate->toDateString(),
         ]);
+    }
+
+    private function resolveDate(CarbonInterface|string $value): CarbonImmutable
+    {
+        if ($value instanceof CarbonInterface) {
+            return CarbonImmutable::instance($value)->startOfDay();
+        }
+
+        return CarbonImmutable::parse($value)->startOfDay();
     }
 }

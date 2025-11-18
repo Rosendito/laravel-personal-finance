@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Budgets\Schemas;
 
 use App\Models\Currency;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -40,15 +41,20 @@ final class BudgetForm
             Section::make('Initial Period')
                 ->description('Every budget must have at least one period. You can add more periods later.')
                 ->schema([
-                    TextInput::make('first_period')
-                        ->label('Period (YYYY-MM)')
-                        ->placeholder('2025-11')
-                        ->default(static fn (): string => now()->format('Y-m'))
+                    DatePicker::make('first_start_at')
+                        ->label('Start date')
+                        ->default(static fn (): string => now()->startOfMonth()->toDateString())
                         ->required()
-                        ->rule('string')
-                        ->maxLength(7)
-                        ->regex('/^\d{4}-\d{2}$/')
-                        ->helperText('Format: YYYY-MM (e.g., 2025-11)')
+                        ->rule('date')
+                        ->helperText('Transactions are included starting on this date.')
+                        ->hiddenOn('edit'),
+                    DatePicker::make('first_end_at')
+                        ->label('End date (exclusive)')
+                        ->default(static fn (): string => now()->startOfMonth()->addMonth()->toDateString())
+                        ->required()
+                        ->after('first_start_at')
+                        ->rule('date')
+                        ->helperText('Transactions on this date belong to the next period.')
                         ->hiddenOn('edit'),
                     TextInput::make('first_amount')
                         ->label('Budgeted Amount')

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->morphs('aggregatable');
             $table->string('key');
             $table->string('scope')->nullable();
-            $table->decimal('value_decimal', 20, 4)->nullable();
+            $table->decimal('value_decimal', 20, 6)->nullable();
             $table->bigInteger('value_int')->nullable();
             $table->json('value_json')->nullable();
             $table->timestamps();

@@ -20,7 +20,7 @@ describe(BudgetPeriod::class, function (): void {
 
         $period = BudgetPeriod::factory()
             ->for($budget)
-            ->forPeriod('2025-11')
+            ->startingAt('2025-11-01', '2025-12-01')
             ->state([
                 'currency_code' => $currency->code,
                 'amount' => 750,

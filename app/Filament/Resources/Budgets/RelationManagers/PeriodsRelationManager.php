@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Budgets\RelationManagers;
 
-use App\Enums\CategoryType;
 use App\Models\Currency;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Unique;
@@ -29,25 +30,30 @@ final class PeriodsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         $ownerRecord = $this->getOwnerRecord();
-        $lastPeriod = $ownerRecord->periods()->latest('period')->first();
+        $lastPeriod = $ownerRecord->periods()->latest('start_at')->first();
+        $defaultStart = $lastPeriod?->end_at?->copy() ?? now()->startOfDay();
 
         return $schema
             ->components([
-                TextInput::make('period')
-                    ->label('Period (YYYY-MM)')
-                    ->placeholder('2025-11')
-                    ->default(static fn (): string => now()->format('Y-m'))
+                DatePicker::make('start_at')
+                    ->label('Start date')
+                    ->default(fn (): string => $defaultStart->toDateString())
                     ->required()
-                    ->rule('string')
-                    ->maxLength(7)
-                    ->regex('/^\d{4}-\d{2}$/')
-                    ->helperText('Format: YYYY-MM (e.g., 2025-11)')
+                    ->rule('date')
                     ->unique(
                         ignoreRecord: true,
                         modifyRuleUsing: static function (Unique $rule) use ($ownerRecord): Unique {
                             return $rule->where('budget_id', $ownerRecord->id);
                         }
-                    ),
+                    )
+                    ->helperText('Transactions on this date are included in the period.'),
+                DatePicker::make('end_at')
+                    ->label('End date (exclusive)')
+                    ->default(fn (): string => $defaultStart->copy()->addMonth()->toDateString())
+                    ->required()
+                    ->after('start_at')
+                    ->rule('date')
+                    ->helperText('Transactions on this date belong to the next period.'),
                 TextInput::make('amount')
                     ->label('Budgeted Amount')
                     ->default(static fn (): ?string => $lastPeriod?->amount)
@@ -68,12 +74,17 @@ final class PeriodsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('period')
-            ->defaultSort('period', 'desc')
+            ->recordTitleAttribute('range_label')
+            ->defaultSort('start_at', 'desc')
+            ->modifyQueryUsing(static fn (Builder $query): Builder => $query->with('aggregates'))
             ->columns([
-                TextColumn::make('period')
-                    ->label('Period')
-                    ->searchable()
+                TextColumn::make('start_at')
+                    ->label('Starts')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('end_at')
+                    ->label('Ends (exclusive)')
+                    ->date()
                     ->sortable(),
                 TextColumn::make('amount')
                     ->label('Budgeted')
@@ -83,28 +94,10 @@ final class PeriodsRelationManager extends RelationManager
                     ->label('Currency')
                     ->badge()
                     ->sortable(),
-                TextColumn::make('spent')
+                TextColumn::make('spent_amount')
                     ->label('Spent')
                     ->money(static fn (Model $record): string => $record->currency_code)
-                    ->state(static function (Model $record): string {
-                        $transactionMonthExpression = match (DB::connection()->getDriverName()) {
-                            'sqlite' => "strftime('%Y-%m', t.effective_at)",
-                            'pgsql' => "TO_CHAR(t.effective_at, 'YYYY-MM')",
-                            default => "DATE_FORMAT(t.effective_at, '%Y-%m')",
-                        };
-
-                        $spent = DB::query()
-                            ->from('ledger_entries as e')
-                            ->selectRaw('COALESCE(SUM(e.amount), 0) as total')
-                            ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
-                            ->join('categories as c', 'c.id', '=', 'e.category_id')
-                            ->where('t.budget_id', $record->budget_id)
-                            ->whereRaw("{$transactionMonthExpression} = ?", [$record->period])
-                            ->where('c.type', CategoryType::Expense->value)
-                            ->first();
-
-                        return bcadd((string) ($spent?->total ?? '0'), '0', 6);
-                    })
+                    ->state(static fn (Model $record): string => $record->spent_amount)
                     ->color(static function (Model $record, $state): string {
                         $spent = (float) $state;
                         $amount = (float) $record->amount;
@@ -119,30 +112,10 @@ final class PeriodsRelationManager extends RelationManager
 
                         return 'success';
                     }),
-                TextColumn::make('remaining')
+                TextColumn::make('remaining_amount')
                     ->label('Remaining')
                     ->money(static fn (Model $record): string => $record->currency_code)
-                    ->state(static function (Model $record): string {
-                        $transactionMonthExpression = match (DB::connection()->getDriverName()) {
-                            'sqlite' => "strftime('%Y-%m', t.effective_at)",
-                            'pgsql' => "TO_CHAR(t.effective_at, 'YYYY-MM')",
-                            default => "DATE_FORMAT(t.effective_at, '%Y-%m')",
-                        };
-
-                        $spent = DB::query()
-                            ->from('ledger_entries as e')
-                            ->selectRaw('COALESCE(SUM(e.amount), 0) as total')
-                            ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
-                            ->join('categories as c', 'c.id', '=', 'e.category_id')
-                            ->where('t.budget_id', $record->budget_id)
-                            ->whereRaw("{$transactionMonthExpression} = ?", [$record->period])
-                            ->where('c.type', CategoryType::Expense->value)
-                            ->first();
-
-                        $spentAmount = (string) ($spent?->total ?? '0');
-
-                        return bcsub($record->amount, $spentAmount, 6);
-                    })
+                    ->state(static fn (Model $record): string => $record->remaining_amount)
                     ->color(static function ($state): string {
                         $remaining = (float) $state;
 
@@ -154,32 +127,7 @@ final class PeriodsRelationManager extends RelationManager
                     }),
                 TextColumn::make('usage_percent')
                     ->label('% Used')
-                    ->state(static function (Model $record): string {
-                        $transactionMonthExpression = match (DB::connection()->getDriverName()) {
-                            'sqlite' => "strftime('%Y-%m', t.effective_at)",
-                            'pgsql' => "TO_CHAR(t.effective_at, 'YYYY-MM')",
-                            default => "DATE_FORMAT(t.effective_at, '%Y-%m')",
-                        };
-
-                        $spent = DB::query()
-                            ->from('ledger_entries as e')
-                            ->selectRaw('COALESCE(SUM(e.amount), 0) as total')
-                            ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
-                            ->join('categories as c', 'c.id', '=', 'e.category_id')
-                            ->where('t.budget_id', $record->budget_id)
-                            ->whereRaw("{$transactionMonthExpression} = ?", [$record->period])
-                            ->where('c.type', CategoryType::Expense->value)
-                            ->first();
-
-                        $spentAmount = (float) ($spent?->total ?? '0');
-                        $budgetAmount = (float) $record->amount;
-
-                        if ($budgetAmount === 0.0) {
-                            return '0';
-                        }
-
-                        return number_format(($spentAmount / $budgetAmount) * 100, 2);
-                    })
+                    ->state(static fn (Model $record): string => $record->usage_percent)
                     ->suffix('%')
                     ->color(static function ($state): string {
                         $percent = (float) $state;
@@ -206,19 +154,11 @@ final class PeriodsRelationManager extends RelationManager
                 DeleteAction::make()
                     ->before(static function (Model $record): void {
                         $hasTransactions = DB::table('ledger_transactions')
-                            ->where('budget_id', $record->budget_id)
-                            ->whereRaw(
-                                match (DB::connection()->getDriverName()) {
-                                    'sqlite' => "strftime('%Y-%m', effective_at) = ?",
-                                    'pgsql' => "TO_CHAR(effective_at, 'YYYY-MM') = ?",
-                                    default => "DATE_FORMAT(effective_at, '%Y-%m') = ?",
-                                },
-                                [$record->period]
-                            )
+                            ->where('budget_period_id', $record->id)
                             ->exists();
 
                         if ($hasTransactions) {
-                            throw new RuntimeException('Cannot delete a period with associated transactions.');
+                            throw new RuntimeException("Cannot delete period {$record->range_label} with associated transactions.");
                         }
                     }),
             ])
@@ -228,19 +168,11 @@ final class PeriodsRelationManager extends RelationManager
                         ->before(static function ($records): void {
                             foreach ($records as $record) {
                                 $hasTransactions = DB::table('ledger_transactions')
-                                    ->where('budget_id', $record->budget_id)
-                                    ->whereRaw(
-                                        match (DB::connection()->getDriverName()) {
-                                            'sqlite' => "strftime('%Y-%m', effective_at) = ?",
-                                            'pgsql' => "TO_CHAR(effective_at, 'YYYY-MM') = ?",
-                                            default => "DATE_FORMAT(effective_at, '%Y-%m') = ?",
-                                        },
-                                        [$record->period]
-                                    )
+                                    ->where('budget_period_id', $record->id)
                                     ->exists();
 
                                 if ($hasTransactions) {
-                                    throw new RuntimeException("Cannot delete period {$record->period} with associated transactions.");
+                                    throw new RuntimeException("Cannot delete period {$record->range_label} with associated transactions.");
                                 }
                             }
                         }),

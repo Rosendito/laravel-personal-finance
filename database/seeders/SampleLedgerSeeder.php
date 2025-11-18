@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\CachedAggregateKey;
 use App\Enums\CategoryType;
 use App\Enums\LedgerAccountType;
 use App\Models\Budget;
@@ -14,6 +15,7 @@ use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
 use App\Models\User;
+use App\Services\Queries\BudgetPeriodSpentQueryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 
@@ -47,11 +49,11 @@ final class SampleLedgerSeeder extends Seeder
             ])
             ->create();
 
-        $currentPeriod = CarbonImmutable::now()->format('Y-m');
+        $currentStart = CarbonImmutable::now()->startOfMonth();
 
-        BudgetPeriod::factory()
+        $budgetPeriod = BudgetPeriod::factory()
             ->for($budget)
-            ->forPeriod($currentPeriod)
+            ->startingAt($currentStart, $currentStart->addMonth())
             ->state([
                 'amount' => 600.00,
                 'currency_code' => $usd->code,
@@ -64,13 +66,29 @@ final class SampleLedgerSeeder extends Seeder
         $this->createEntry($salaryTransaction, $checkingAccount, amount: 5_000.00, currency: $usd->code);
         $this->createEntry($salaryTransaction, $incomeAccount, amount: -5_000.00, currency: $usd->code, categoryId: $salaryCategory->id);
 
-        $groceriesTransaction = $this->createTransaction($user, 'Grocery Run', CarbonImmutable::now()->startOfMonth()->addDays(3), $budget);
+        $groceriesTransaction = $this->createTransaction(
+            $user,
+            'Grocery Run',
+            CarbonImmutable::now()->startOfMonth()->addDays(3),
+            $budgetPeriod
+        );
         $this->createEntry($groceriesTransaction, $expenseAccount, amount: 250.00, currency: $usd->code, categoryId: $groceriesCategory->id);
         $this->createEntry($groceriesTransaction, $checkingAccount, amount: -250.00, currency: $usd->code);
 
         $creditCardPayment = $this->createTransaction($user, 'Credit Card Payment', CarbonImmutable::now()->startOfMonth()->addDays(5));
         $this->createEntry($creditCardPayment, $creditCardAccount, amount: -400.00, currency: $usd->code);
         $this->createEntry($creditCardPayment, $checkingAccount, amount: 400.00, currency: $usd->code);
+
+        $spent = app(BudgetPeriodSpentQueryService::class)->total($budgetPeriod->fresh());
+
+        $budgetPeriod->upsertCachedAggregate(
+            CachedAggregateKey::Spent,
+            [
+                'value_decimal' => $spent,
+                'value_int' => null,
+                'value_json' => null,
+            ],
+        );
     }
 
     private function createAccount(User $user, LedgerAccountType $type, string $name, string $currency): LedgerAccount
@@ -98,8 +116,12 @@ final class SampleLedgerSeeder extends Seeder
         return $factory->create();
     }
 
-    private function createTransaction(User $user, string $description, CarbonImmutable $effectiveAt, ?Budget $budget = null): LedgerTransaction
-    {
+    private function createTransaction(
+        User $user,
+        string $description,
+        CarbonImmutable $effectiveAt,
+        ?BudgetPeriod $budgetPeriod = null
+    ): LedgerTransaction {
         return LedgerTransaction::factory()
             ->for($user)
             ->state([
@@ -109,7 +131,7 @@ final class SampleLedgerSeeder extends Seeder
                 'reference' => null,
                 'source' => 'manual',
                 'idempotency_key' => null,
-                'budget_id' => $budget?->id,
+                'budget_period_id' => $budgetPeriod?->id,
             ])
             ->create();
     }

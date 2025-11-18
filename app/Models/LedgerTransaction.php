@@ -20,14 +20,14 @@ final class LedgerTransaction extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function budget(): BelongsTo
-    {
-        return $this->belongsTo(Budget::class);
-    }
-
     public function entries(): HasMany
     {
         return $this->hasMany(LedgerEntry::class, 'transaction_id');
+    }
+
+    public function budgetPeriod(): BelongsTo
+    {
+        return $this->belongsTo(BudgetPeriod::class);
     }
 
     public function isBalanced(): bool
@@ -53,7 +53,7 @@ final class LedgerTransaction extends Model
     {
         return [
             'user_id' => 'integer',
-            'budget_id' => 'integer',
+            'budget_period_id' => 'integer',
             'description' => 'string',
             'effective_at' => 'datetime',
             'posted_at' => 'date',

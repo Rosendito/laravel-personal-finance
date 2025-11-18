@@ -20,7 +20,12 @@ final class CreateBudget extends CreateRecord
     {
         // Remove the first period fields from the budget data
         // They'll be used in afterCreate
-        unset($data['first_period'], $data['first_amount'], $data['first_currency_code']);
+        unset(
+            $data['first_start_at'],
+            $data['first_end_at'],
+            $data['first_amount'],
+            $data['first_currency_code']
+        );
 
         return $data;
     }
@@ -31,9 +36,17 @@ final class CreateBudget extends CreateRecord
         $data = $this->data;
 
         // Create the first period
-        if (isset($data['first_period'], $data['first_amount'], $data['first_currency_code'])) {
+        if (
+            isset(
+                $data['first_start_at'],
+                $data['first_end_at'],
+                $data['first_amount'],
+                $data['first_currency_code']
+            )
+        ) {
             $budget->periods()->create([
-                'period' => $data['first_period'],
+                'start_at' => $data['first_start_at'],
+                'end_at' => $data['first_end_at'],
                 'amount' => $data['first_amount'],
                 'currency_code' => $data['first_currency_code'],
             ]);

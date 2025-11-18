@@ -6,11 +6,14 @@ namespace App\Services;
 
 use App\Data\LedgerEntryData;
 use App\Data\LedgerTransactionData;
+use App\Events\LedgerTransactionCreated;
 use App\Exceptions\LedgerIntegrityException;
+use App\Models\BudgetPeriod;
 use App\Models\Category;
 use App\Models\LedgerAccount;
 use App\Models\LedgerTransaction;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -36,18 +39,18 @@ final class LedgerTransactionService
         $accounts = $this->loadAccounts($entryCollection);
         $categories = $this->loadCategories($entryCollection);
 
-        $budgetId = $this->determineBudgetId($entryCollection, $categories);
+        $budgetPeriod = $this->determineBudgetPeriod($entryCollection, $categories, $transactionData->effective_at);
 
         $normalizedEntries = $entryCollection
             ->map(fn (LedgerEntryData $entry): array => $this->normalizeEntry($entry, $user, $accounts, $categories))
             ->all();
 
         try {
-            return DB::transaction(function () use ($user, $transactionData, $normalizedEntries, $budgetId): LedgerTransaction {
+            $transaction = DB::transaction(function () use ($user, $transactionData, $normalizedEntries, $budgetPeriod): LedgerTransaction {
                 $transaction = new LedgerTransaction();
 
                 $transaction->forceFill(
-                    $this->buildTransactionAttributes($transactionData, $user, $budgetId),
+                    $this->buildTransactionAttributes($transactionData, $user, $budgetPeriod),
                 );
 
                 $transaction->save();
@@ -72,6 +75,10 @@ final class LedgerTransactionService
 
             throw $exception;
         }
+
+        event(new LedgerTransactionCreated($transaction->load('budgetPeriod')));
+
+        return $transaction;
     }
 
     /**
@@ -162,22 +169,49 @@ final class LedgerTransactionService
         ];
     }
 
-    /**
-     * @param  Collection<int, LedgerEntryData>  $entries
-     * @param  Collection<int, Category>  $categories
-     */
-    private function determineBudgetId(Collection $entries, Collection $categories): ?int
-    {
-        $categoryIds = $entries
-            ->map(fn (LedgerEntryData $entry): ?int => $entry->category_id)
-            ->filter()
-            ->unique();
+    private function determineBudgetPeriod(
+        Collection $entries,
+        Collection $categories,
+        CarbonInterface $effectiveAt
+    ): ?BudgetPeriod {
+        $budgetIds = $this->resolveBudgetIds($entries, $categories);
 
-        if ($categoryIds->isEmpty()) {
+        if ($budgetIds->isEmpty()) {
             return null;
         }
 
-        $budgetIds = $categoryIds
+        if ($budgetIds->count() > 1) {
+            throw LedgerIntegrityException::mixedBudgetAssignments();
+        }
+
+        /** @var int $budgetId */
+        $budgetId = $budgetIds->first();
+
+        $period = BudgetPeriod::query()
+            ->where('budget_id', $budgetId)
+            ->where('start_at', '<=', $effectiveAt->toDateString())
+            ->where('end_at', '>', $effectiveAt->toDateString())
+            ->orderByDesc('start_at')
+            ->first();
+
+        if ($period === null) {
+            throw LedgerIntegrityException::budgetPeriodNotFound($budgetId, $effectiveAt->toDateString());
+        }
+
+        return $period;
+    }
+
+    /**
+     * @param  Collection<int, LedgerEntryData>  $entries
+     * @param  Collection<int, Category>  $categories
+     * @return Collection<int, int>
+     */
+    private function resolveBudgetIds(Collection $entries, Collection $categories): Collection
+    {
+        return $entries
+            ->map(fn (LedgerEntryData $entry): ?int => $entry->category_id)
+            ->filter()
+            ->unique()
             ->map(function (int $categoryId) use ($categories): ?int {
                 /** @var Category|null $category */
                 $category = $categories->get($categoryId);
@@ -191,18 +225,13 @@ final class LedgerTransactionService
             ->filter(static fn (?int $budgetId): bool => $budgetId !== null)
             ->unique()
             ->values();
-
-        if ($budgetIds->count() > 1) {
-            throw LedgerIntegrityException::mixedBudgetAssignments();
-        }
-
-        /** @var int|null $budgetId */
-        $budgetId = $budgetIds->first();
-
-        return $budgetId;
     }
 
-    private function buildTransactionAttributes(LedgerTransactionData $transactionData, User $user, ?int $budgetId): array
+    private function buildTransactionAttributes(
+        LedgerTransactionData $transactionData,
+        User $user,
+        ?BudgetPeriod $budgetPeriod
+    ): array
     {
         return [
             'description' => $transactionData->description,
@@ -212,7 +241,7 @@ final class LedgerTransactionService
             'source' => $transactionData->source,
             'idempotency_key' => $transactionData->idempotency_key,
             'user_id' => $user->id,
-            'budget_id' => $budgetId,
+            'budget_period_id' => $budgetPeriod?->id,
         ];
     }
 

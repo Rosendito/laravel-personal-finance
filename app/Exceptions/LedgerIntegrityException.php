@@ -62,4 +62,9 @@ final class LedgerIntegrityException extends RuntimeException
     {
         return new self('Ledger transactions cannot be linked to multiple budgets.');
     }
+
+    public static function budgetPeriodNotFound(int $budgetId, string $effectiveDate): self
+    {
+        return new self("Budget [{$budgetId}] does not have a period covering {$effectiveDate}.");
+    }
 }

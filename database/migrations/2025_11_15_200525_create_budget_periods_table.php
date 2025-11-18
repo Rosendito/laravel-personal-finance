@@ -16,13 +16,15 @@ return new class extends Migration
         Schema::create('budget_periods', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('budget_id')->constrained('budgets')->cascadeOnDelete();
-            $table->string('period', 7);
+            $table->date('start_at');
+            $table->date('end_at');
             $table->decimal('amount', 20, 6);
             $table->string('currency_code', 3);
             $table->timestamps();
 
             $table->foreign('currency_code')->references('code')->on('currencies');
-            $table->unique(['budget_id', 'period']);
+            $table->unique(['budget_id', 'start_at']);
+            $table->index(['budget_id', 'start_at', 'end_at']);
         });
     }
 

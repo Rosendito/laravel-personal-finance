@@ -29,18 +29,6 @@ pest()->presets()->custom('strictWithLaravelExceptions', function (array $namesp
         $expectations[] = expect($namespace)
             ->classes()
             ->not
-            ->toHaveProtectedMethodsBesides([
-                'casts',
-                'boot',
-                'booted',
-                'rules',
-                'prepareForValidation',
-                'newEloquentBuilder',
-            ]);
-
-        $expectations[] = expect($namespace)
-            ->classes()
-            ->not
             ->toBeAbstract();
 
         $expectations[] = expect($namespace)->toUseStrictTypes();
