@@ -33,21 +33,28 @@ final class EnsureFundamentalAccounts
 
             $accountName = $accountData['name'];
             if ($currencyCode !== 'USD') {
-                 $accountName = sprintf('%s (%s)', $accountData['name'], $currencyCode);
+                $accountName = sprintf('%s (%s)', $accountData['name'], $currencyCode);
             }
 
-            LedgerAccount::firstOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'name' => $accountName,
-                ],
-                [
-                    'type' => $accountData['type'],
-                    'currency_code' => $currencyCode,
-                    'is_archived' => false,
-                ]
-            );
+            // Check if account already exists before creating
+            $exists = LedgerAccount::where('user_id', $user->id)
+                ->where('name', $accountName)
+                ->where('type', $accountData['type'])
+                ->where('currency_code', $currencyCode)
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            LedgerAccount::create([
+                'user_id' => $user->id,
+                'name' => $accountName,
+                'type' => $accountData['type'],
+                'currency_code' => $currencyCode,
+                'is_archived' => false,
+                'is_fundamental' => true,
+            ]);
         }
     }
 }
-

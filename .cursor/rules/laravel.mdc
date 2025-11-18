@@ -8,3 +8,4 @@ alwaysApply: true
 - DOn'T TOUCH FILE CLASSES THAT HAVE DEPRECATED ANNOTAION
 - DONT UPDATE REACT WITH INERTIA APP ANYMORE, WE ARE MOVING TO FILAMENT
 - DON;T DO TESTS FOR FILAMENT
+- WE ARE USING AUTO-discovery in event driven, we dont need to map event with listener, no changes needed to enable it

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('type', 10);
             $table->string('currency_code', 3);
             $table->boolean('is_archived')->default(false);
+            $table->boolean('is_fundamental')->default(false);
             $table->timestamps();
 
             $table->foreign('currency_code')->references('code')->on('currencies');

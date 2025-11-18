@@ -67,4 +67,14 @@ final class LedgerIntegrityException extends RuntimeException
     {
         return new self("Budget [{$budgetId}] does not have a period covering {$effectiveDate}.");
     }
+
+    public static function cannotDeleteFundamentalAccount(): self
+    {
+        return new self('Cannot delete fundamental accounts (External Expenses/Income).');
+    }
+
+    public static function cannotDeleteAccountWithEntries(): self
+    {
+        return new self('Cannot delete account that has ledger entries associated.');
+    }
 }

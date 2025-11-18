@@ -4,37 +4,54 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
-use App\Actions\EnsureFundamentalAccounts;
+use App\Events\LedgerAccountCreated;
+use App\Events\LedgerAccountUpdated;
+use App\Exceptions\LedgerIntegrityException;
 use App\Models\LedgerAccount;
-use Illuminate\Support\Str;
 
 final class LedgerAccountObserver
 {
-    public function __construct(
-        private readonly EnsureFundamentalAccounts $ensureFundamentalAccounts,
-    ) {}
-
     /**
      * Handle the LedgerAccount "created" event.
      */
     public function created(LedgerAccount $ledgerAccount): void
     {
-        // Avoid infinite loops and only react to "Real" accounts (Asset/Liability/Equity).
-        // Assuming Fundamental accounts are EXPENSE/INCOME.
-        // If user creates a manual Expense/Income account, we should also ensure the fundamental ones exist
-        // but we must check if the created account IS one of the fundamental ones to avoid recursion.
-        
-        if (Str::startsWith($ledgerAccount->name, 'External Expenses') || Str::startsWith($ledgerAccount->name, 'External Income')) {
+        // Avoid infinite loops - don't emit event for fundamental accounts
+        if ($ledgerAccount->is_fundamental) {
             return;
         }
 
-        // Load user if not loaded (it should be, but safety first)
-        $user = $ledgerAccount->user;
-        if ($user === null) {
-             // Should not happen given our schema, but strict types...
-             return;
+        event(new LedgerAccountCreated($ledgerAccount));
+    }
+
+    /**
+     * Handle the LedgerAccount "updated" event.
+     */
+    public function updated(LedgerAccount $ledgerAccount): void
+    {
+        // Avoid infinite loops - don't emit event for fundamental accounts
+        if ($ledgerAccount->is_fundamental) {
+            return;
         }
 
-        $this->ensureFundamentalAccounts->execute($user, $ledgerAccount->currency_code);
+        $oldCurrencyCode = $ledgerAccount->getOriginal('currency_code');
+
+        event(new LedgerAccountUpdated($ledgerAccount, $oldCurrencyCode));
+    }
+
+    /**
+     * Handle the LedgerAccount "deleting" event.
+     */
+    public function deleting(LedgerAccount $ledgerAccount): void
+    {
+        // Prevent deletion of fundamental accounts
+        if ($ledgerAccount->is_fundamental) {
+            throw LedgerIntegrityException::cannotDeleteFundamentalAccount();
+        }
+
+        // Prevent deletion of accounts with entries
+        if ($ledgerAccount->entries()->exists()) {
+            throw LedgerIntegrityException::cannotDeleteAccountWithEntries();
+        }
     }
 }

@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Enums\LedgerAccountType;
 use Database\Factories\LedgerAccountFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +42,7 @@ final class LedgerAccount extends Model
             'type' => LedgerAccountType::class,
             'currency_code' => 'string',
             'is_archived' => 'boolean',
+            'is_fundamental' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
