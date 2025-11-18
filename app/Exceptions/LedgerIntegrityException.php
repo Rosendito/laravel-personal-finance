@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Exceptions;
 
+use App\Enums\LedgerAccountType;
 use RuntimeException;
 
 final class LedgerIntegrityException extends RuntimeException
@@ -76,5 +77,18 @@ final class LedgerIntegrityException extends RuntimeException
     public static function cannotDeleteAccountWithEntries(): self
     {
         return new self('Cannot delete account that has ledger entries associated.');
+    }
+
+    public static function fundamentalAccountNotFound(
+        int $userId,
+        string $currencyCode,
+        LedgerAccountType $type
+    ): self {
+        return new self(sprintf(
+            'Fundamental %s account for user %d and currency %s was not found.',
+            $type->name,
+            $userId,
+            $currencyCode,
+        ));
     }
 }
