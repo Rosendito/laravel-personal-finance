@@ -14,14 +14,10 @@ use Illuminate\Support\Facades\Date;
 
 describe(LedgerEntry::class, function (): void {
     beforeEach(function (): void {
-        $this->user = User::factory()->create();
+        // Currency 'USD' created by global setup
+        $this->currency = Currency::where('code', 'USD')->firstOrFail();
 
-        $this->currency = Currency::factory()
-            ->state([
-                'code' => 'USD',
-                'precision' => 2,
-            ])
-            ->create();
+        $this->user = User::factory()->create();
 
         $this->transaction = LedgerTransaction::factory()
             ->for($this->user)

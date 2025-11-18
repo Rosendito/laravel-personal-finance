@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Currency;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
@@ -17,6 +18,12 @@ pest()->extend(TestCase::class)
         Sleep::fake();
 
         $this->freezeTime();
+
+        // Seed default currency to prevent InitializeUserSpace failures
+        $defaultCurrency = config('finance.currency.default', 'USD');
+        if (! Currency::where('code', $defaultCurrency)->exists()) {
+            Currency::factory()->create(['code' => $defaultCurrency]);
+        }
     })
     ->in('Browser', 'Feature', 'Unit');
 

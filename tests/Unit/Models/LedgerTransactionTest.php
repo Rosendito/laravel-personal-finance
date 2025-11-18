@@ -12,14 +12,11 @@ use Illuminate\Support\Facades\Date;
 
 describe(LedgerTransaction::class, function (): void {
     it('evaluates double-entry balance on transactions', function (): void {
-        $user = User::factory()->create();
-        $currency = Currency::factory()
-            ->state([
-                'code' => 'USD',
-                'precision' => 2,
-            ])
-            ->create();
+        // Currency 'USD' created by global setup
+        $currency = Currency::where('code', 'USD')->firstOrFail();
 
+        $user = User::factory()->create();
+        
         $assetAccount = LedgerAccount::factory()
             ->for($user)
             ->ofType(LedgerAccountType::Asset)
@@ -40,7 +37,6 @@ describe(LedgerTransaction::class, function (): void {
 
         $transaction = LedgerTransaction::factory()
             ->for($user)
-            ->for($assetAccount, 'account')
             ->state([
                 'description' => 'Test Transaction',
                 'effective_at' => Date::now(),
@@ -72,14 +68,11 @@ describe(LedgerTransaction::class, function (): void {
     });
 
     it('derives account balances from ledger entries', function (): void {
-        $user = User::factory()->create();
-        $currency = Currency::factory()
-            ->state([
-                'code' => 'USD',
-                'precision' => 2,
-            ])
-            ->create();
+        // Currency 'USD' created by global setup
+        $currency = Currency::where('code', 'USD')->firstOrFail();
 
+        $user = User::factory()->create();
+        
         $assetAccount = LedgerAccount::factory()
             ->for($user)
             ->ofType(LedgerAccountType::Asset)
@@ -100,7 +93,6 @@ describe(LedgerTransaction::class, function (): void {
 
         $transaction = LedgerTransaction::factory()
             ->for($user)
-            ->for($assetAccount, 'account')
             ->state([
                 'description' => 'Supplies purchase',
                 'effective_at' => Date::now(),
@@ -133,29 +125,4 @@ describe(LedgerTransaction::class, function (): void {
         expect((float) $balance)->toBe(800.0);
     });
 
-    it('belongs to an account', function (): void {
-        $user = User::factory()->create();
-        $currency = Currency::factory()
-            ->state([
-                'code' => 'USD',
-                'precision' => 2,
-            ])
-            ->create();
-
-        $account = LedgerAccount::factory()
-            ->for($user)
-            ->ofType(LedgerAccountType::Asset)
-            ->state([
-                'currency_code' => $currency->code,
-                'name' => 'Test Account',
-            ])
-            ->create();
-
-        $transaction = LedgerTransaction::factory()
-            ->for($user)
-            ->for($account, 'account')
-            ->create();
-
-        expect($transaction->account->is($account))->toBeTrue();
-    });
 });

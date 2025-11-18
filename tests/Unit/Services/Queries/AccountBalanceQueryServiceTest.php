@@ -16,12 +16,10 @@ describe(AccountBalanceQueryService::class, function (): void {
     beforeEach(function (): void {
         $this->service = new AccountBalanceQueryService();
         $this->user = User::factory()->create();
-        $this->currency = Currency::factory()
-            ->state([
-                'code' => 'USD',
-                'precision' => 2,
-            ])
-            ->create();
+        $this->currency = Currency::query()->updateOrCreate(
+            ['code' => 'USD'],
+            ['precision' => 2],
+        );
 
         $this->assetAccount = LedgerAccount::factory()
             ->for($this->user)

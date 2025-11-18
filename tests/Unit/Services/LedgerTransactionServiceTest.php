@@ -18,14 +18,11 @@ use Illuminate\Support\Facades\Date;
 describe(LedgerTransactionService::class, function (): void {
     beforeEach(function (): void {
         $this->service = new LedgerTransactionService();
-        $this->user = User::factory()->create();
 
-        $this->currency = Currency::factory()
-            ->state([
-                'code' => 'USD',
-                'precision' => 2,
-            ])
-            ->create();
+        // Currency 'USD' created by global setup
+        $this->currency = Currency::where('code', 'USD')->firstOrFail();
+
+        $this->user = User::factory()->create();
 
         $this->assetAccount = LedgerAccount::factory()
             ->for($this->user)
@@ -49,7 +46,6 @@ describe(LedgerTransactionService::class, function (): void {
             return LedgerTransactionData::from(
                 array_merge(
                     [
-                        'account_id' => $this->assetAccount->id,
                         'description' => 'Monthly Salary',
                         'effective_at' => Date::now(),
                         'posted_at' => Date::now(),

@@ -22,9 +22,6 @@ final class LedgerTransactionData extends Data
      * @param  DataCollection<int, LedgerEntryData>  $entries
      */
     public function __construct(
-        #[Required, IntegerType]
-        public int $account_id,
-
         #[Required, StringType]
         public string $description,
 

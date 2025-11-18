@@ -36,7 +36,6 @@ final class LedgerTransactionService
         $this->assertEntryCount($entryCollection);
         $this->assertEntriesAreBalanced($entryCollection);
 
-        $transactionAccount = $this->loadTransactionAccount($transactionData->account_id, $user);
         $accounts = $this->loadAccounts($entryCollection);
         $categories = $this->loadCategories($entryCollection);
 
@@ -47,11 +46,11 @@ final class LedgerTransactionService
             ->all();
 
         try {
-            $transaction = DB::transaction(function () use ($user, $transactionData, $normalizedEntries, $budgetPeriod, $transactionAccount): LedgerTransaction {
+            $transaction = DB::transaction(function () use ($user, $transactionData, $normalizedEntries, $budgetPeriod): LedgerTransaction {
                 $transaction = new LedgerTransaction();
 
                 $transaction->forceFill(
-                    $this->buildTransactionAttributes($transactionData, $user, $budgetPeriod, $transactionAccount),
+                    $this->buildTransactionAttributes($transactionData, $user, $budgetPeriod),
                 );
 
                 $transaction->save();
@@ -231,8 +230,7 @@ final class LedgerTransactionService
     private function buildTransactionAttributes(
         LedgerTransactionData $transactionData,
         User $user,
-        ?BudgetPeriod $budgetPeriod,
-        LedgerAccount $transactionAccount
+        ?BudgetPeriod $budgetPeriod
     ): array {
         return [
             'description' => $transactionData->description,
@@ -242,7 +240,6 @@ final class LedgerTransactionService
             'source' => $transactionData->source,
             'idempotency_key' => $transactionData->idempotency_key,
             'user_id' => $user->id,
-            'account_id' => $transactionAccount->id,
             'budget_period_id' => $budgetPeriod?->id,
         ];
     }
@@ -310,20 +307,6 @@ final class LedgerTransactionService
         }
 
         return (string) $amount;
-    }
-
-    private function loadTransactionAccount(int $accountId, User $user): LedgerAccount
-    {
-        $account = LedgerAccount::query()
-            ->where('id', $accountId)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if ($account === null) {
-            throw LedgerIntegrityException::accountNotFound($accountId);
-        }
-
-        return $account;
     }
 
     private function assertAccountOwnership(LedgerAccount $account, User $user): void
