@@ -19,4 +19,3 @@ trait ResolvesActingUser
         return User::query()->firstOrFail();
     }
 }
-

@@ -24,4 +24,3 @@ final class BudgetPeriodSpentQueryService
         return bcadd((string) ($sum ?? '0'), '0', 6);
     }
 }
-

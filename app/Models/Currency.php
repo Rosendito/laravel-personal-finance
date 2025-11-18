@@ -39,11 +39,6 @@ final class Currency extends Model
         return $this->hasMany(LedgerEntry::class, 'currency_code', 'code');
     }
 
-    public function budgetPeriods(): HasMany
-    {
-        return $this->hasMany(BudgetPeriod::class, 'currency_code', 'code');
-    }
-
     /**
      * @return array<string, string>
      */

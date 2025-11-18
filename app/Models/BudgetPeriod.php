@@ -6,8 +6,6 @@ namespace App\Models;
 
 use App\Concerns\HasCachedAggregates;
 use App\Enums\CachedAggregateKey;
-use App\Models\CachedAggregate;
-use Database\Factories\BudgetPeriodFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,11 +22,6 @@ final class BudgetPeriod extends Model
     public function budget(): BelongsTo
     {
         return $this->belongsTo(Budget::class);
-    }
-
-    public function currency(): BelongsTo
-    {
-        return $this->belongsTo(Currency::class, 'currency_code', 'code');
     }
 
     /**
@@ -100,16 +93,6 @@ final class BudgetPeriod extends Model
         );
     }
 
-    private function resolveSpentAmount(): string
-    {
-        $aggregate = $this->relationLoaded('aggregates')
-            ? $this->aggregates
-                ->first(static fn (CachedAggregate $aggregate): bool => $aggregate->key === CachedAggregateKey::Spent->value && $aggregate->scope === null)
-            : $this->cachedAggregate(CachedAggregateKey::Spent);
-
-        return bcadd((string) ($aggregate?->value_decimal ?? '0'), '0', 6);
-    }
-
     /**
      * @return array<string, string>
      */
@@ -120,9 +103,18 @@ final class BudgetPeriod extends Model
             'start_at' => 'date',
             'end_at' => 'date',
             'amount' => 'decimal:6',
-            'currency_code' => 'string',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    private function resolveSpentAmount(): string
+    {
+        $aggregate = $this->relationLoaded('aggregates')
+            ? $this->aggregates
+                ->first(static fn (CachedAggregate $aggregate): bool => $aggregate->key === CachedAggregateKey::Spent->value && $aggregate->scope === null)
+            : $this->cachedAggregate(CachedAggregateKey::Spent);
+
+        return bcadd((string) ($aggregate?->value_decimal ?? '0'), '0', 6);
     }
 }

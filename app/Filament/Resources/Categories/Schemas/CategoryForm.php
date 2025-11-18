@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Categories\Schemas;
 
-use App\Models\Category;
 use App\Enums\CategoryType;
-use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Category;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Toggle;
-use Illuminate\Validation\Rules\Unique;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
-use Illuminate\Database\Eloquent\Builder;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Unique;
 
 final class CategoryForm
 {

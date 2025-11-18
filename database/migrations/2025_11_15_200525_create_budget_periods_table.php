@@ -19,10 +19,8 @@ return new class extends Migration
             $table->date('start_at');
             $table->date('end_at');
             $table->decimal('amount', 20, 6);
-            $table->string('currency_code', 3);
             $table->timestamps();
 
-            $table->foreign('currency_code')->references('code')->on('currencies');
             $table->unique(['budget_id', 'start_at']);
             $table->index(['budget_id', 'start_at', 'end_at']);
         });

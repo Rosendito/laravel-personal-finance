@@ -56,18 +56,18 @@ final class SampleLedgerSeeder extends Seeder
             ->startingAt($currentStart, $currentStart->addMonth())
             ->state([
                 'amount' => 600.00,
-                'currency_code' => $usd->code,
             ])
             ->create();
 
         $groceriesCategory->update(['budget_id' => $budget->id]);
 
-        $salaryTransaction = $this->createTransaction($user, 'Monthly Salary', CarbonImmutable::now()->startOfMonth()->addDay());
+        $salaryTransaction = $this->createTransaction($user, $checkingAccount, 'Monthly Salary', CarbonImmutable::now()->startOfMonth()->addDay());
         $this->createEntry($salaryTransaction, $checkingAccount, amount: 5_000.00, currency: $usd->code);
         $this->createEntry($salaryTransaction, $incomeAccount, amount: -5_000.00, currency: $usd->code, categoryId: $salaryCategory->id);
 
         $groceriesTransaction = $this->createTransaction(
             $user,
+            $checkingAccount,
             'Grocery Run',
             CarbonImmutable::now()->startOfMonth()->addDays(3),
             $budgetPeriod
@@ -75,7 +75,7 @@ final class SampleLedgerSeeder extends Seeder
         $this->createEntry($groceriesTransaction, $expenseAccount, amount: 250.00, currency: $usd->code, categoryId: $groceriesCategory->id);
         $this->createEntry($groceriesTransaction, $checkingAccount, amount: -250.00, currency: $usd->code);
 
-        $creditCardPayment = $this->createTransaction($user, 'Credit Card Payment', CarbonImmutable::now()->startOfMonth()->addDays(5));
+        $creditCardPayment = $this->createTransaction($user, $checkingAccount, 'Credit Card Payment', CarbonImmutable::now()->startOfMonth()->addDays(5));
         $this->createEntry($creditCardPayment, $creditCardAccount, amount: -400.00, currency: $usd->code);
         $this->createEntry($creditCardPayment, $checkingAccount, amount: 400.00, currency: $usd->code);
 
@@ -118,12 +118,14 @@ final class SampleLedgerSeeder extends Seeder
 
     private function createTransaction(
         User $user,
+        LedgerAccount $account,
         string $description,
         CarbonImmutable $effectiveAt,
         ?BudgetPeriod $budgetPeriod = null
     ): LedgerTransaction {
         return LedgerTransaction::factory()
             ->for($user)
+            ->for($account, 'account')
             ->state([
                 'description' => $description,
                 'effective_at' => $effectiveAt,

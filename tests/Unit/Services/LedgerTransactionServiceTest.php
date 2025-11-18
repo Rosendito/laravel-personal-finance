@@ -49,6 +49,7 @@ describe(LedgerTransactionService::class, function (): void {
             return LedgerTransactionData::from(
                 array_merge(
                     [
+                        'account_id' => $this->assetAccount->id,
                         'description' => 'Monthly Salary',
                         'effective_at' => Date::now(),
                         'posted_at' => Date::now(),
@@ -221,9 +222,6 @@ describe(LedgerTransactionService::class, function (): void {
         $period = BudgetPeriod::factory()
             ->for($budget)
             ->startingAt($periodStart, $periodStart->copy()->addMonth())
-            ->state([
-                'currency_code' => $this->currency->code,
-            ])
             ->create();
 
         $category = Category::factory()

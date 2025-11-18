@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\LedgerAccount;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -24,6 +25,7 @@ final class LedgerTransactionFactory extends Factory
 
         return [
             'user_id' => User::factory(),
+            'account_id' => LedgerAccount::factory(),
             'budget_period_id' => null,
             'description' => fake()->sentence(),
             'effective_at' => $effectiveAt,

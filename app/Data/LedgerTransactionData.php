@@ -8,6 +8,7 @@ use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\Validation\ArrayType;
 use Spatie\LaravelData\Attributes\Validation\Date;
+use Spatie\LaravelData\Attributes\Validation\IntegerType;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Required;
@@ -21,6 +22,9 @@ final class LedgerTransactionData extends Data
      * @param  DataCollection<int, LedgerEntryData>  $entries
      */
     public function __construct(
+        #[Required, IntegerType]
+        public int $account_id,
+
         #[Required, StringType]
         public string $description,
 

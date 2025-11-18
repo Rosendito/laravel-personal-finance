@@ -40,6 +40,7 @@ describe(LedgerTransaction::class, function (): void {
 
         $transaction = LedgerTransaction::factory()
             ->for($user)
+            ->for($assetAccount, 'account')
             ->state([
                 'description' => 'Test Transaction',
                 'effective_at' => Date::now(),
@@ -99,6 +100,7 @@ describe(LedgerTransaction::class, function (): void {
 
         $transaction = LedgerTransaction::factory()
             ->for($user)
+            ->for($assetAccount, 'account')
             ->state([
                 'description' => 'Supplies purchase',
                 'effective_at' => Date::now(),
@@ -129,5 +131,31 @@ describe(LedgerTransaction::class, function (): void {
             ->sum('amount');
 
         expect((float) $balance)->toBe(800.0);
+    });
+
+    it('belongs to an account', function (): void {
+        $user = User::factory()->create();
+        $currency = Currency::factory()
+            ->state([
+                'code' => 'USD',
+                'precision' => 2,
+            ])
+            ->create();
+
+        $account = LedgerAccount::factory()
+            ->for($user)
+            ->ofType(LedgerAccountType::Asset)
+            ->state([
+                'currency_code' => $currency->code,
+                'name' => 'Test Account',
+            ])
+            ->create();
+
+        $transaction = LedgerTransaction::factory()
+            ->for($user)
+            ->for($account, 'account')
+            ->create();
+
+        expect($transaction->account->is($account))->toBeTrue();
     });
 });
