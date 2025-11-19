@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use App\Models\User;
+use App\Enums\LedgerAccountType;
 use App\Models\Budget;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
+use App\Models\User;
 use Illuminate\Database\Seeder;
-use App\Enums\LedgerAccountType;
-use App\Actions\EnsureFundamentalAccounts;
 
 final class DatabaseSeeder extends Seeder
 {

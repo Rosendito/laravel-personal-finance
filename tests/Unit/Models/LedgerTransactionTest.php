@@ -16,7 +16,7 @@ describe(LedgerTransaction::class, function (): void {
         $currency = Currency::where('code', 'USD')->firstOrFail();
 
         $user = User::factory()->create();
-        
+
         $assetAccount = LedgerAccount::factory()
             ->for($user)
             ->ofType(LedgerAccountType::Asset)
@@ -72,7 +72,7 @@ describe(LedgerTransaction::class, function (): void {
         $currency = Currency::where('code', 'USD')->firstOrFail();
 
         $user = User::factory()->create();
-        
+
         $assetAccount = LedgerAccount::factory()
             ->for($user)
             ->ofType(LedgerAccountType::Asset)

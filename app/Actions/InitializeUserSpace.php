@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
-use App\Enums\LedgerAccountType;
 use App\Models\Currency;
-use App\Models\LedgerAccount;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 final class InitializeUserSpace
 {
@@ -31,10 +30,9 @@ final class InitializeUserSpace
 
         // Ensure currency exists (it should be seeded)
         if (! Currency::where('code', $currencyCode)->exists()) {
-            throw new \RuntimeException("Default currency '{$currencyCode}' not found in the system.");
+            throw new RuntimeException("Default currency '{$currencyCode}' not found in the system.");
         }
 
         $this->ensureFundamentalAccounts->execute($user, $currencyCode);
     }
 }
-

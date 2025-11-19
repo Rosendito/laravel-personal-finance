@@ -55,6 +55,7 @@ final class LedgerAccountForm
                                     return $query->orderBy('code');
                                 }
                             )
+                            ->default(static fn (): string => config('finance.currency.default'))
                             ->searchable()
                             ->preload()
                             ->native(false)

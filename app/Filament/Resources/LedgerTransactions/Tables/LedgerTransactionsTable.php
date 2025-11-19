@@ -9,6 +9,7 @@ use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -55,21 +56,23 @@ final class LedgerTransactionsTable
                     ->placeholder('—')
                     ->limit(30)
                     ->wrap()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: static fn (Page $livewire): bool => $livewire->activeTab === 'transfer'),
                 TextColumn::make('from_accounts')
                     ->label('Desde')
                     ->state(static fn (Model $record): ?string => self::summarizeAccounts($record, outgoing: true))
                     ->placeholder('—')
                     ->limit(30)
                     ->wrap()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->hidden(static fn (Page $livewire): bool => $livewire->activeTab === 'income'),
                 TextColumn::make('to_accounts')
                     ->label('Hacia')
                     ->state(static fn (Model $record): ?string => self::summarizeAccounts($record, outgoing: false))
                     ->placeholder('—')
                     ->limit(30)
                     ->wrap()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->hidden(static fn (Page $livewire): bool => ($livewire->activeTab ?? 'expense') === 'expense'),
                 TextColumn::make('effective_at')
                     ->label('Fecha efectiva')
                     ->dateTime()
@@ -78,18 +81,13 @@ final class LedgerTransactionsTable
                     ->label('Fecha publicación')
                     ->date()
                     ->sortable()
-                    ->toggleable(),
-                TextColumn::make('entries_count')
-                    ->label('Movimientos')
-                    ->counts('entries')
-                    ->formatStateUsing(static fn (?int $state): string => (string) ($state ?? 0))
-                    ->sortable()
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('budgetPeriod.budget.name')
                     ->label('Presupuesto')
                     ->placeholder('—')
                     ->sortable()
-                    ->toggleable(),
+                    ->toggleable()
+                    ->hidden(static fn (Page $livewire): bool => $livewire->activeTab !== 'expense'),
                 TextColumn::make('source')
                     ->label('Origen')
                     ->badge()

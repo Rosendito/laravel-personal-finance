@@ -17,6 +17,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Section;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -42,6 +43,22 @@ final class RegisterIncomeFilamentAction
                             ->pluck('name', 'id')
                             ->toArray();
                     })
+                    ->default(static function (): ?int {
+                        $userId = Auth::id();
+
+                        if ($userId === null) {
+                            return null;
+                        }
+
+                        $account = LedgerAccount::query()
+                            ->where('user_id', $userId)
+                            ->where('type', LedgerAccountType::Asset)
+                            ->where('is_archived', false)
+                            ->withMostIncomeTransactions()
+                            ->first();
+
+                        return $account?->id;
+                    })
                     ->searchable()
                     ->preload()
                     ->required()
@@ -61,9 +78,6 @@ final class RegisterIncomeFilamentAction
                     ->required()
                     ->default(now())
                     ->native(false),
-                DatePicker::make('posted_at')
-                    ->label('Fecha publicación')
-                    ->native(false),
                 Select::make('category_id')
                     ->label('Categoría')
                     ->options(static function (): array {
@@ -79,13 +93,22 @@ final class RegisterIncomeFilamentAction
                     ->searchable()
                     ->preload()
                     ->native(false),
-                Textarea::make('memo')
-                    ->label('Memo')
-                    ->rows(3)
-                    ->maxLength(500),
-                TextInput::make('reference')
-                    ->label('Referencia')
-                    ->maxLength(255),
+                Section::make('Información adicional')
+                    ->description('Campos opcionales adicionales')
+                    ->schema([
+                        DatePicker::make('posted_at')
+                            ->label('Fecha publicación')
+                            ->native(false),
+                        Textarea::make('memo')
+                            ->label('Memo')
+                            ->rows(3)
+                            ->maxLength(500),
+                        TextInput::make('reference')
+                            ->label('Referencia')
+                            ->maxLength(255),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
             ])
             ->action(function (array $data): void {
                 $user = Auth::user();
@@ -125,7 +148,6 @@ final class RegisterIncomeFilamentAction
                     ->body('El ingreso se ha registrado correctamente')
                     ->success()
                     ->send();
-            })
-            ->successNotificationTitle('Ingreso registrado correctamente');
+            });
     }
 }
