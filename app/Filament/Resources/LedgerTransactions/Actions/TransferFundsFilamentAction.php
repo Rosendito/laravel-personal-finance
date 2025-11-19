@@ -5,14 +5,11 @@ declare(strict_types=1);
 namespace App\Filament\Resources\LedgerTransactions\Actions;
 
 use App\Actions\TransferFundsAction;
+use App\Concerns\HasTransactionFormComponents;
 use App\Data\Transactions\TransferFundsData;
-use App\Enums\LedgerAccountType;
 use App\Models\LedgerAccount;
 use Filament\Actions\Action;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
@@ -21,6 +18,8 @@ use Illuminate\Support\Facades\Auth;
 
 final class TransferFundsFilamentAction
 {
+    use HasTransactionFormComponents;
+
     public static function make(): Action
     {
         return Action::make('transferFunds')
@@ -29,48 +28,24 @@ final class TransferFundsFilamentAction
             ->color('warning')
             ->modalHeading('Transferir Fondos')
             ->schema([
-                Select::make('from_account_id')
-                    ->label('Cuenta origen')
-                    ->options(static function (): array {
-                        $userId = Auth::id() ?? 0;
-
-                        return LedgerAccount::query()
-                            ->where('user_id', $userId)
-                            ->where('type', LedgerAccountType::Asset)
-                            ->where('is_archived', false)
-                            ->pluck('name', 'id')
-                            ->toArray();
-                    })
-                    ->searchable()
-                    ->preload()
-                    ->required()
-                    ->native(false)
-                    ->live(),
+                self::accountSelectField(
+                    name: 'from_account_id',
+                    label: 'Cuenta origen',
+                ),
                 Select::make('to_account_id')
                     ->label('Cuenta destino')
                     ->options(static function (callable $get): array {
-                        $userId = Auth::id() ?? 0;
                         $fromAccountId = $get('from_account_id');
 
-                        return LedgerAccount::query()
-                            ->where('user_id', $userId)
-                            ->where('type', LedgerAccountType::Asset)
-                            ->where('is_archived', false)
-                            ->where('id', '!=', $fromAccountId)
-                            ->pluck('name', 'id')
-                            ->toArray();
+                        return self::getAccountOptions($fromAccountId);
                     })
                     ->searchable()
                     ->preload()
                     ->required()
                     ->native(false)
-                    ->live(),
-                TextInput::make('amount')
-                    ->label('Monto')
-                    ->numeric()
-                    ->required()
-                    ->minValue(0.01)
-                    ->step(0.01),
+                    ->live()
+                    ->allowHtml(),
+                self::amountInputFieldWithTransferBalanceValidation(),
                 TextInput::make('to_amount')
                     ->label('Monto destino')
                     ->numeric()
@@ -110,67 +85,10 @@ final class TransferFundsFilamentAction
 
                         return $fromAccount->currency_code !== $toAccount->currency_code;
                     }),
-                TextInput::make('exchange_rate')
-                    ->label('Tasa de cambio')
-                    ->numeric()
-                    ->minValue(0.000001)
-                    ->visible(function (Get $get): bool {
-                        $fromId = $get('from_account_id');
-                        $toId = $get('to_account_id');
-
-                        if (! $fromId || ! $toId) {
-                            return false;
-                        }
-
-                        $defaultCurrency = config('finance.currency.default');
-                        $fromAccount = LedgerAccount::find($fromId);
-                        $toAccount = LedgerAccount::find($toId);
-
-                        if (! $fromAccount || ! $toAccount) {
-                            return false;
-                        }
-
-                        return $fromAccount->currency_code !== $defaultCurrency
-                            && $toAccount->currency_code !== $defaultCurrency;
-                    })
-                    ->required(function (Get $get): bool {
-                        $fromId = $get('from_account_id');
-                        $toId = $get('to_account_id');
-
-                        if (! $fromId || ! $toId) {
-                            return false;
-                        }
-
-                        $defaultCurrency = config('finance.currency.default');
-                        $fromAccount = LedgerAccount::find($fromId);
-                        $toAccount = LedgerAccount::find($toId);
-
-                        if (! $fromAccount || ! $toAccount) {
-                            return false;
-                        }
-
-                        return $fromAccount->currency_code !== $defaultCurrency
-                            && $toAccount->currency_code !== $defaultCurrency;
-                    }),
-                TextInput::make('description')
-                    ->label('Descripción')
-                    ->required()
-                    ->maxLength(255),
-                DateTimePicker::make('effective_at')
-                    ->label('Fecha efectiva')
-                    ->required()
-                    ->default(now())
-                    ->native(false),
-                DatePicker::make('posted_at')
-                    ->label('Fecha publicación')
-                    ->native(false),
-                Textarea::make('memo')
-                    ->label('Memo')
-                    ->rows(3)
-                    ->maxLength(500),
-                TextInput::make('reference')
-                    ->label('Referencia')
-                    ->maxLength(255),
+                self::exchangeRateInputFieldForTransfer(),
+                self::descriptionInputField(),
+                self::effectiveAtDateTimePickerField(),
+                self::additionalInformationSection(),
             ])
             ->action(function (array $data): void {
                 $user = Auth::user();
@@ -212,7 +130,6 @@ final class TransferFundsFilamentAction
                     ->body('La transferencia se ha realizado correctamente')
                     ->success()
                     ->send();
-            })
-            ->successNotificationTitle('Transferencia realizada correctamente');
+            });
     }
 }

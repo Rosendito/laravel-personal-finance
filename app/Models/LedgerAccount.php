@@ -52,6 +52,15 @@ final class LedgerAccount extends Model
         return self::withMostTransactionsByAccountType($query, LedgerAccountType::Expense, 'expense_transactions_count');
     }
 
+    public function scopeWithBalance(Builder $query): Builder
+    {
+        return $query
+            ->addSelect([
+                'balance' => LedgerEntry::selectRaw('COALESCE(SUM(amount), 0)')
+                    ->whereColumn('account_id', 'ledger_accounts.id'),
+            ]);
+    }
+
     /**
      * @return array<string, string>
      */

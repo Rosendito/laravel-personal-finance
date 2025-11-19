@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\LedgerTransactions\Schemas;
 
+use App\Helpers\MoneyFormatter;
 use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
 use Filament\Infolists\Components\TextEntry;
@@ -52,12 +53,11 @@ final class LedgerTransactionInfolist
                                 }
 
                                 $accountName = $entry->account->name ?? 'N/A';
-                                $amount = number_format((float) $entry->amount, 2, '.', ',');
-                                $currency = $entry->currency_code ?? '';
+                                $formattedAmount = MoneyFormatter::format($entry->amount, $entry->currency_code ?? '');
                                 $category = $entry->category?->name;
                                 $memo = $entry->memo;
 
-                                $line = "{$accountName}: {$amount} {$currency}";
+                                $line = "{$accountName}: {$formattedAmount}";
 
                                 if ($category !== null) {
                                     $line .= " ({$category})";

@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\Filament\Resources\LedgerTransactions\Widgets;
 
 use App\Data\AccountBalanceData;
+use App\Helpers\MoneyFormatter;
 use App\Services\Queries\AccountBalanceQueryService;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-
-use function sprintf;
 
 final class AccountBalancesWidget extends StatsOverviewWidget
 {
@@ -43,21 +42,12 @@ final class AccountBalancesWidget extends StatsOverviewWidget
 
         return $balances
             ->map(
-                fn (AccountBalanceData $balance): Stat => Stat::make(
+                static fn (AccountBalanceData $balance): Stat => Stat::make(
                     $balance->name,
-                    $this->formatBalance($balance->balance, $balance->currency_code),
+                    MoneyFormatter::format($balance->balance, $balance->currency_code),
                 ),
             )
             ->values()
             ->all();
-    }
-
-    private function formatBalance(int|float|string $amount, string $currency): string
-    {
-        return sprintf(
-            '%s %s',
-            $currency,
-            number_format((float) $amount, 2, '.', ','),
-        );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\LedgerTransactions\Tables;
 
+use App\Helpers\MoneyFormatter;
 use App\Models\BudgetPeriod;
 use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
@@ -47,6 +48,12 @@ final class LedgerTransactionsTable
                 TextColumn::make('amount_summary')
                     ->label('Monto')
                     ->state(static fn (Model $record): ?string => self::summarizeAmount($record))
+                    ->placeholder('—')
+                    ->alignRight()
+                    ->toggleable(),
+                TextColumn::make('amount_base_summary')
+                    ->label('Monto base')
+                    ->state(static fn (Model $record): ?string => self::summarizeBaseAmount($record))
                     ->placeholder('—')
                     ->alignRight()
                     ->toggleable(),
@@ -194,11 +201,7 @@ final class LedgerTransactionsTable
             return null;
         }
 
-        return sprintf(
-            '%s %s',
-            $currency ?? '',
-            number_format((float) $largest, 2, '.', ','),
-        );
+        return MoneyFormatter::format($largest, $currency ?? '');
     }
 
     private static function summarizeCategories(Model $record): ?string
@@ -243,6 +246,31 @@ final class LedgerTransactionsTable
         }
 
         return $accounts !== '' ? $accounts : null;
+    }
+
+    private static function summarizeBaseAmount(Model $record): ?string
+    {
+        if (! $record instanceof LedgerTransaction) {
+            return null;
+        }
+
+        $largest = null;
+        $defaultCurrency = config('finance.currency.default');
+
+        foreach ($record->entries as $entry) {
+            $amountBase = $entry->amount_base ?? $entry->amount;
+            $absolute = self::absoluteAmount((string) $amountBase);
+
+            if ($largest === null || bccomp($absolute, $largest, 6) === 1) {
+                $largest = $absolute;
+            }
+        }
+
+        if ($largest === null) {
+            return null;
+        }
+
+        return MoneyFormatter::format($largest, $defaultCurrency);
     }
 
     private static function absoluteAmount(string $amount): string
