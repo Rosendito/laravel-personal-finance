@@ -10,6 +10,7 @@ use App\Filament\Resources\LedgerTransactions\Actions\RegisterIncomeFilamentActi
 use App\Filament\Resources\LedgerTransactions\Actions\TransferFundsFilamentAction;
 use App\Filament\Resources\LedgerTransactions\LedgerTransactionResource;
 use App\Filament\Resources\LedgerTransactions\Widgets\AccountBalancesWidget;
+use App\Filament\Resources\LedgerTransactions\Widgets\BudgetWidget;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
@@ -64,6 +65,13 @@ final class ListLedgerTransactions extends ListRecords
     {
         return [
             AccountBalancesWidget::class,
+            BudgetWidget::class,
+        ];
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [
         ];
     }
 }
