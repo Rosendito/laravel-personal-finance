@@ -29,11 +29,14 @@ final class LedgerTransactionsTable
     {
         return $table
             ->modifyQueryUsing(
-                static fn (Builder $query): Builder => $query->with([
-                    'entries.account',
-                    'entries.category',
-                    'budgetPeriod.budget',
-                ]),
+                static fn (Builder $query): Builder => $query
+                    ->withAmountSummary()
+                    ->withBaseAmountSummary()
+                    ->with([
+                        'entries.account',
+                        'categories',
+                        'budgetPeriod.budget',
+                    ]),
             )
             ->defaultSort('effective_at', 'desc')
             ->columns([
@@ -49,19 +52,59 @@ final class LedgerTransactionsTable
                     ->limit(50),
                 TextColumn::make('amount_summary')
                     ->label('Monto')
-                    ->state(static fn (Model $record): ?string => self::summarizeAmount($record))
+                    ->state(static function (Model $record): ?string {
+                        if (! $record instanceof LedgerTransaction) {
+                            return null;
+                        }
+
+                        $amount = $record->amount_summary;
+                        $currency = $record->amount_currency;
+
+                        if ($amount === null) {
+                            return null;
+                        }
+
+                        return MoneyFormatter::format($amount, $currency ?? '');
+                    })
                     ->placeholder('—')
                     ->alignRight()
+                    ->sortable()
                     ->toggleable(),
                 TextColumn::make('amount_base_summary')
                     ->label('Monto base')
-                    ->state(static fn (Model $record): ?string => self::summarizeBaseAmount($record))
+                    ->state(static function (Model $record): ?string {
+                        if (! $record instanceof LedgerTransaction) {
+                            return null;
+                        }
+
+                        $amount = $record->amount_base_summary;
+                        $defaultCurrency = config('finance.currency.default');
+
+                        if ($amount === null) {
+                            return null;
+                        }
+
+                        return MoneyFormatter::format($amount, $defaultCurrency);
+                    })
                     ->placeholder('—')
                     ->alignRight()
+                    ->sortable()
                     ->toggleable(),
                 TextColumn::make('category_summary')
                     ->label('Categoría')
-                    ->state(static fn (Model $record): ?string => self::summarizeCategories($record))
+                    ->state(static function (Model $record): ?string {
+                        if (! $record instanceof LedgerTransaction) {
+                            return null;
+                        }
+
+                        $categories = $record->categories
+                            ->pluck('name')
+                            ->unique()
+                            ->filter()
+                            ->join(', ');
+
+                        return $categories !== '' ? $categories : null;
+                    })
                     ->placeholder('—')
                     ->limit(30)
                     ->wrap()
@@ -176,47 +219,6 @@ final class LedgerTransactionsTable
             ]);
     }
 
-    private static function summarizeAmount(Model $record): ?string
-    {
-        if (! $record instanceof LedgerTransaction) {
-            return null;
-        }
-
-        $largest = null;
-        $currency = null;
-
-        foreach ($record->entries as $entry) {
-            $absolute = self::absoluteAmount((string) $entry->amount);
-
-            if ($largest === null || bccomp($absolute, $largest, 6) === 1) {
-                $largest = $absolute;
-                $currency = $entry->currency_code;
-            }
-        }
-
-        if ($largest === null) {
-            return null;
-        }
-
-        return MoneyFormatter::format($largest, $currency ?? '');
-    }
-
-    private static function summarizeCategories(Model $record): ?string
-    {
-        if (! $record instanceof LedgerTransaction) {
-            return null;
-        }
-
-        $categories = $record->entries
-            ->map(static fn (LedgerEntry $entry): ?string => $entry->category?->name)
-            ->filter()
-            ->unique()
-            ->values()
-            ->implode(', ');
-
-        return $categories !== '' ? $categories : null;
-    }
-
     private static function summarizeAccounts(Model $record, bool $outgoing): ?string
     {
         if (! $record instanceof LedgerTransaction) {
@@ -243,41 +245,5 @@ final class LedgerTransactionsTable
         }
 
         return $accounts !== '' ? $accounts : null;
-    }
-
-    private static function summarizeBaseAmount(Model $record): ?string
-    {
-        if (! $record instanceof LedgerTransaction) {
-            return null;
-        }
-
-        $largest = null;
-        $defaultCurrency = config('finance.currency.default');
-
-        foreach ($record->entries as $entry) {
-            $amountBase = $entry->amount_base ?? $entry->amount;
-            $absolute = self::absoluteAmount((string) $amountBase);
-
-            if ($largest === null || bccomp($absolute, $largest, 6) === 1) {
-                $largest = $absolute;
-            }
-        }
-
-        if ($largest === null) {
-            return null;
-        }
-
-        return MoneyFormatter::format($largest, $defaultCurrency);
-    }
-
-    private static function absoluteAmount(string $amount): string
-    {
-        $normalized = mb_ltrim($amount, '+');
-
-        if (str_starts_with($normalized, '-')) {
-            return mb_ltrim(mb_substr($normalized, 1), '+') ?: '0';
-        }
-
-        return $normalized;
     }
 }
