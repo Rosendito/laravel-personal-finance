@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\CategoryType;
 use Database\Factories\CategoryFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +43,15 @@ final class Category extends Model
     public function budget(): BelongsTo
     {
         return $this->belongsTo(Budget::class);
+    }
+
+    public function scopeWithBalance(Builder $query): Builder
+    {
+        return $query
+            ->addSelect([
+                'balance' => LedgerEntry::selectRaw('COALESCE(SUM(amount_base), 0)')
+                    ->whereColumn('category_id', 'categories.id'),
+            ]);
     }
 
     /**

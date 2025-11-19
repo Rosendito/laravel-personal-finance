@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\LedgerTransactions;
 
+use App\Filament\Resources\LedgerTransactions\Pages\EditLedgerTransaction;
 use App\Filament\Resources\LedgerTransactions\Pages\ListLedgerTransactions;
 use App\Filament\Resources\LedgerTransactions\Pages\ViewLedgerTransaction;
+use App\Filament\Resources\LedgerTransactions\Schemas\LedgerTransactionForm;
 use App\Filament\Resources\LedgerTransactions\Schemas\LedgerTransactionInfolist;
 use App\Filament\Resources\LedgerTransactions\Tables\LedgerTransactionsTable;
 use App\Models\LedgerTransaction;
@@ -31,6 +33,11 @@ final class LedgerTransactionResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'description';
 
+    public static function form(Schema $schema): Schema
+    {
+        return LedgerTransactionForm::configure($schema);
+    }
+
     public static function infolist(Schema $schema): Schema
     {
         return LedgerTransactionInfolist::configure($schema);
@@ -53,6 +60,7 @@ final class LedgerTransactionResource extends Resource
     {
         return [
             'index' => ListLedgerTransactions::route('/'),
+            'edit' => EditLedgerTransaction::route('/{record}/edit'),
             'view' => ViewLedgerTransaction::route('/{record}'),
         ];
     }

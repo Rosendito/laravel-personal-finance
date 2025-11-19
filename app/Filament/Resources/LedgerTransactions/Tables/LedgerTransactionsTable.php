@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\LedgerTransactions\Tables;
 
+use App\Filament\Resources\LedgerTransactions\Actions\EditLedgerTransactionFilamentAction;
 use App\Helpers\MoneyFormatter;
 use App\Models\BudgetPeriod;
 use App\Models\LedgerEntry;
@@ -44,6 +45,7 @@ final class LedgerTransactionsTable
                     ->label('Descripción')
                     ->searchable()
                     ->sortable()
+                    ->wrap()
                     ->limit(50),
                 TextColumn::make('amount_summary')
                     ->label('Monto')
@@ -175,6 +177,7 @@ final class LedgerTransactionsTable
                     ),
             ])
             ->recordActions([
+                EditLedgerTransactionFilamentAction::make(),
                 ViewAction::make(),
             ]);
     }

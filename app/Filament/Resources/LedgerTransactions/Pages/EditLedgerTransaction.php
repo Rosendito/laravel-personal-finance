@@ -5,21 +5,13 @@ declare(strict_types=1);
 namespace App\Filament\Resources\LedgerTransactions\Pages;
 
 use App\Filament\Resources\LedgerTransactions\LedgerTransactionResource;
-use Filament\Actions\EditAction;
-use Filament\Resources\Pages\ViewRecord;
+use Filament\Resources\Pages\EditRecord;
 
-final class ViewLedgerTransaction extends ViewRecord
+final class EditLedgerTransaction extends EditRecord
 {
     protected static string $resource = LedgerTransactionResource::class;
 
-    protected function getHeaderActions(): array
-    {
-        return [
-            EditAction::make(),
-        ];
-    }
-
-    protected function mutateFormDataBeforeFill(array $data): array
+    protected function mutateFormDataBeforeSave(array $data): array
     {
         $record = $this->getRecord();
 

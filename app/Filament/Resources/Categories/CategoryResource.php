@@ -68,6 +68,8 @@ final class CategoryResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->where('user_id', $userId);
+        return $query
+            ->where('user_id', $userId)
+            ->withBalance();
     }
 }
