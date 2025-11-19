@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Categories\Tables;
 
 use App\Enums\CategoryType;
 use App\Helpers\MoneyFormatter;
+use App\Models\Category;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -16,7 +17,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 final class CategoriesTable
@@ -54,7 +54,7 @@ final class CategoriesTable
                     ->toggleable(),
                 TextColumn::make('balance')
                     ->label('Balance')
-                    ->state(static fn (Model $record): string => MoneyFormatter::format(
+                    ->state(static fn (Category $record): string => MoneyFormatter::format(
                         $record->balance ?? 0,
                         config('finance.currency.default'),
                     ))

@@ -6,6 +6,7 @@ namespace App\Filament\Resources\LedgerAccounts\Tables;
 
 use App\Enums\LedgerAccountType;
 use App\Helpers\MoneyFormatter;
+use App\Models\LedgerAccount;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -14,7 +15,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 final class LedgerAccountsTable
 {
@@ -49,7 +49,7 @@ final class LedgerAccountsTable
                     ->sortable(),
                 TextColumn::make('balance')
                     ->label('Balance')
-                    ->state(static fn (Model $record): string => MoneyFormatter::format(
+                    ->state(static fn (LedgerAccount $record): string => MoneyFormatter::format(
                         $record->balance ?? 0,
                         $record->currency_code ?? '',
                     ))

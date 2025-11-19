@@ -17,7 +17,6 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -52,11 +51,7 @@ final class LedgerTransactionsTable
                     ->limit(50),
                 TextColumn::make('amount_summary')
                     ->label('Monto')
-                    ->state(static function (Model $record): ?string {
-                        if (! $record instanceof LedgerTransaction) {
-                            return null;
-                        }
-
+                    ->state(static function (LedgerTransaction $record): ?string {
                         $amount = $record->amount_summary;
                         $currency = $record->amount_currency;
 
@@ -72,11 +67,7 @@ final class LedgerTransactionsTable
                     ->toggleable(),
                 TextColumn::make('amount_base_summary')
                     ->label('Monto base')
-                    ->state(static function (Model $record): ?string {
-                        if (! $record instanceof LedgerTransaction) {
-                            return null;
-                        }
-
+                    ->state(static function (LedgerTransaction $record): ?string {
                         $amount = $record->amount_base_summary;
                         $defaultCurrency = config('finance.currency.default');
 
@@ -92,11 +83,7 @@ final class LedgerTransactionsTable
                     ->toggleable(),
                 TextColumn::make('category_summary')
                     ->label('Categoría')
-                    ->state(static function (Model $record): ?string {
-                        if (! $record instanceof LedgerTransaction) {
-                            return null;
-                        }
-
+                    ->state(static function (LedgerTransaction $record): ?string {
                         $categories = $record->categories
                             ->pluck('name')
                             ->unique()
@@ -111,7 +98,7 @@ final class LedgerTransactionsTable
                     ->toggleable(isToggledHiddenByDefault: static fn (Page $livewire): bool => $livewire->activeTab === 'transfer'),
                 TextColumn::make('from_accounts')
                     ->label('Desde')
-                    ->state(static fn (Model $record): ?string => self::summarizeAccounts($record, outgoing: true))
+                    ->state(static fn (LedgerTransaction $record): ?string => self::summarizeAccounts($record, outgoing: true))
                     ->placeholder('—')
                     ->limit(30)
                     ->wrap()
@@ -119,7 +106,7 @@ final class LedgerTransactionsTable
                     ->hidden(static fn (Page $livewire): bool => $livewire->activeTab === 'income'),
                 TextColumn::make('to_accounts')
                     ->label('Hacia')
-                    ->state(static fn (Model $record): ?string => self::summarizeAccounts($record, outgoing: false))
+                    ->state(static fn (LedgerTransaction $record): ?string => self::summarizeAccounts($record, outgoing: false))
                     ->placeholder('—')
                     ->limit(30)
                     ->wrap()
@@ -219,12 +206,8 @@ final class LedgerTransactionsTable
             ]);
     }
 
-    private static function summarizeAccounts(Model $record, bool $outgoing): ?string
+    private static function summarizeAccounts(LedgerTransaction $record, bool $outgoing): ?string
     {
-        if (! $record instanceof LedgerTransaction) {
-            return null;
-        }
-
         $accounts = $record->entries
             ->filter(static function (LedgerEntry $entry) use ($outgoing): bool {
                 $comparison = bccomp((string) $entry->amount, '0', 6);

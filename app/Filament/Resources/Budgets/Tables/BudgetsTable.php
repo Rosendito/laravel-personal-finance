@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Budgets\Tables;
 
+use App\Models\Budget;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -13,7 +14,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 
 final class BudgetsTable
 {
@@ -38,15 +38,15 @@ final class BudgetsTable
                 TextColumn::make('currentPeriod.amount')
                     ->label('Budgeted')
                     ->numeric(2)
-                    ->state(static fn (Model $record): ?string => $record->currentPeriod?->amount)
+                    ->state(static fn (Budget $record): ?string => $record->currentPeriod?->amount)
                     ->sortable(query: static fn (Builder $query, string $direction): Builder => $query->join('budget_periods', 'budgets.id', '=', 'budget_periods.budget_id')
                         ->orderBy('budget_periods.amount', $direction)
                         ->select('budgets.*')),
                 TextColumn::make('currentPeriod.spent_amount')
                     ->label('Spent')
                     ->numeric(2)
-                    ->state(static fn (Model $record): string => $record->currentPeriod?->spent_amount ?? '0')
-                    ->color(static function (Model $record, $state): string {
+                    ->state(static fn (Budget $record): string => $record->currentPeriod?->spent_amount ?? '0')
+                    ->color(static function (Budget $record, $state): string {
                         $period = $record->currentPeriod;
 
                         if ($period === null) {
@@ -69,8 +69,8 @@ final class BudgetsTable
                 TextColumn::make('currentPeriod.remaining_amount')
                     ->label('Remaining')
                     ->numeric(2)
-                    ->state(static fn (Model $record): string => $record->currentPeriod?->remaining_amount ?? '0')
-                    ->color(static function (Model $record, $state): string {
+                    ->state(static fn (Budget $record): string => $record->currentPeriod?->remaining_amount ?? '0')
+                    ->color(static function (Budget $record, $state): string {
                         $remaining = (float) $state;
 
                         if ($remaining < 0) {
@@ -81,9 +81,9 @@ final class BudgetsTable
                     }),
                 TextColumn::make('currentPeriod.usage_percent')
                     ->label('% Used')
-                    ->state(static fn (Model $record): string => $record->currentPeriod?->usage_percent ?? '0')
+                    ->state(static fn (Budget $record): string => $record->currentPeriod?->usage_percent ?? '0')
                     ->suffix('%')
-                    ->color(static function (Model $record, $state): string {
+                    ->color(static function (Budget $record, $state): string {
                         $percent = (float) $state;
 
                         if ($percent > 100) {

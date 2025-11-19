@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Budgets\RelationManagers;
 
+use App\Models\BudgetPeriod;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -16,7 +17,6 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Unique;
 use RuntimeException;
@@ -85,8 +85,8 @@ final class PeriodsRelationManager extends RelationManager
                 TextColumn::make('spent_amount')
                     ->label('Spent')
                     ->numeric(2)
-                    ->state(static fn (Model $record): string => $record->spent_amount)
-                    ->color(static function (Model $record, $state): string {
+                    ->state(static fn (BudgetPeriod $record): string => $record->spent_amount)
+                    ->color(static function (BudgetPeriod $record, $state): string {
                         $spent = (float) $state;
                         $amount = (float) $record->amount;
 
@@ -103,7 +103,7 @@ final class PeriodsRelationManager extends RelationManager
                 TextColumn::make('remaining_amount')
                     ->label('Remaining')
                     ->numeric(2)
-                    ->state(static fn (Model $record): string => $record->remaining_amount)
+                    ->state(static fn (BudgetPeriod $record): string => $record->remaining_amount)
                     ->color(static function ($state): string {
                         $remaining = (float) $state;
 
@@ -115,7 +115,7 @@ final class PeriodsRelationManager extends RelationManager
                     }),
                 TextColumn::make('usage_percent')
                     ->label('% Used')
-                    ->state(static fn (Model $record): string => $record->usage_percent)
+                    ->state(static fn (BudgetPeriod $record): string => $record->usage_percent)
                     ->suffix('%')
                     ->color(static function ($state): string {
                         $percent = (float) $state;
@@ -140,7 +140,7 @@ final class PeriodsRelationManager extends RelationManager
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make()
-                    ->before(static function (Model $record): void {
+                    ->before(static function (BudgetPeriod $record): void {
                         $hasTransactions = DB::table('ledger_transactions')
                             ->where('budget_period_id', $record->id)
                             ->exists();
