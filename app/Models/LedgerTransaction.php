@@ -39,7 +39,7 @@ final class LedgerTransaction extends Model
         }
 
         $total = $entries->reduce(
-            static fn (string $carry, LedgerEntry $entry): string => bcadd($carry, (string) $entry->amount, 6),
+            static fn (string $carry, LedgerEntry $entry): string => bcadd($carry, (string) ($entry->amount_base ?? $entry->amount), 6),
             '0'
         );
 

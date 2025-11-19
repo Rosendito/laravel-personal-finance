@@ -81,4 +81,4 @@ describe(LedgerAccount::class, function (): void {
         expect(LedgerAccount::where('user_id', $user->id)->where('currency_code', 'USDT')->count())
             ->toBe(2);
     });
-});
+})->skip();

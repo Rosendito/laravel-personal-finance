@@ -34,15 +34,24 @@ final class LedgerTransactionService
         $entryCollection = collect($transactionData->entries->items());
 
         $this->assertEntryCount($entryCollection);
-        $this->assertEntriesAreBalanced($entryCollection);
 
         $accounts = $this->loadAccounts($entryCollection);
         $categories = $this->loadCategories($entryCollection);
 
+        $baseAmounts = $this->calculateBaseAmounts($entryCollection, $accounts, $transactionData);
+
+        $this->assertEntriesAreBalanced($baseAmounts);
+
         $budgetPeriod = $this->determineBudgetPeriod($entryCollection, $categories, $transactionData->effective_at);
 
         $normalizedEntries = $entryCollection
-            ->map(fn (LedgerEntryData $entry): array => $this->normalizeEntry($entry, $user, $accounts, $categories))
+            ->map(fn (LedgerEntryData $entry, int $index): array => $this->normalizeEntry(
+                $entry,
+                $baseAmounts[$index],
+                $user,
+                $accounts,
+                $categories
+            ))
             ->all();
 
         try {
@@ -92,16 +101,19 @@ final class LedgerTransactionService
     }
 
     /**
-     * @param  Collection<int, LedgerEntryData>  $entries
+     * @param  array<int, string>  $baseAmounts
      */
-    private function assertEntriesAreBalanced(Collection $entries): void
+    private function assertEntriesAreBalanced(array $baseAmounts): void
     {
-        $total = $entries->reduce(
-            static fn (string $carry, LedgerEntryData $entry): string => bcadd($carry, (string) $entry->amount, 6),
-            '0'
-        );
+        $total = '0';
+        foreach ($baseAmounts as $amount) {
+            $total = bcadd($total, $amount, 6);
+        }
 
-        if (bccomp($total, '0', 6) !== 0) {
+        // Allow small rounding difference for base currency conversion (e.g. 0.01)
+        $absTotal = str_starts_with($total, '-') ? substr($total, 1) : $total;
+
+        if (bccomp($absTotal, '0.01', 6) === 1) {
             throw LedgerIntegrityException::unbalancedEntries();
         }
     }
@@ -140,12 +152,97 @@ final class LedgerTransactionService
     }
 
     /**
+     * @param  Collection<int, LedgerEntryData>  $entries
+     * @param  Collection<int, LedgerAccount>  $accounts
+     * @return array<int, string>
+     */
+    private function calculateBaseAmounts(
+        Collection $entries,
+        Collection $accounts,
+        LedgerTransactionData $transactionData
+    ): array {
+        $defaultCurrency = config('finance.currency.default');
+        $baseAmounts = [];
+        $knownBaseTotal = '0';
+        $unknownIndices = [];
+        $unknownTotalAmount = '0';
+
+        foreach ($entries as $index => $entry) {
+            $account = $this->resolveAccount($entry->account_id, $accounts);
+            $currencyCode = $this->determineCurrencyCode($entry, $account);
+            $amount = (string) $entry->amount;
+
+            if ($currencyCode === $defaultCurrency) {
+                $baseAmounts[$index] = $amount;
+                $knownBaseTotal = bcadd($knownBaseTotal, $amount, 6);
+            } elseif (
+                $transactionData->exchange_rate !== null
+                && $transactionData->currency_code === $currencyCode
+            ) {
+                // amount_base = amount / exchange_rate
+                // We use bcdiv with high precision
+                $rate = (string) $transactionData->exchange_rate;
+                $baseAmount = bcdiv($amount, $rate, 6);
+                $baseAmounts[$index] = $baseAmount;
+                $knownBaseTotal = bcadd($knownBaseTotal, $baseAmount, 6);
+            } else {
+                $unknownIndices[] = $index;
+                // We track the absolute amount for distribution ratio?
+                // No, we should track the signed amount to distribute properly?
+                // Actually, usually unknown entries balance the known entries.
+                // If known total is -100, unknown total base must be +100.
+                // We distribute +100 among unknown entries based on their face value weights.
+                // But wait, if we have multiple unknown entries with different signs?
+                // That would be complex. Assuming unknown entries are on the "other side" of the transaction.
+                // Let's sum the absolute values of unknown entries to find weights.
+                $unknownTotalAmount = bcadd($unknownTotalAmount, (string) abs((float) $amount), 6);
+            }
+        }
+
+        if (empty($unknownIndices)) {
+            return $baseAmounts;
+        }
+
+        // The remaining base amount needed to balance the transaction to 0
+        $remainingBase = bcmul($knownBaseTotal, '-1', 6);
+
+        // Distribute remainingBase among unknown entries
+        $distributedTotal = '0';
+        $lastUnknownIndex = end($unknownIndices);
+
+        foreach ($unknownIndices as $index) {
+            if ($index === $lastUnknownIndex) {
+                // Allocate the rest to the last one to avoid rounding errors
+                $baseAmounts[$index] = bcsub($remainingBase, $distributedTotal, 6);
+            } else {
+                $entry = $entries[$index];
+                $amount = (string) abs((float) $entry->amount);
+
+                if (bccomp($unknownTotalAmount, '0', 6) === 0) {
+                     // Should not happen if there are entries, unless amounts are 0
+                     $share = '0';
+                } else {
+                    // share = remainingBase * (amount / unknownTotalAmount)
+                    $ratio = bcdiv($amount, $unknownTotalAmount, 10);
+                    $share = bcmul($remainingBase, $ratio, 6);
+                }
+
+                $baseAmounts[$index] = $share;
+                $distributedTotal = bcadd($distributedTotal, $share, 6);
+            }
+        }
+
+        return $baseAmounts;
+    }
+
+    /**
      * @param  Collection<int, LedgerAccount>  $accounts
      * @param  Collection<int, Category>  $categories
      * @return array<string, mixed>
      */
     private function normalizeEntry(
         LedgerEntryData $entry,
+        string $amountBase,
         User $user,
         Collection $accounts,
         Collection $categories
@@ -163,7 +260,7 @@ final class LedgerTransactionService
             'account_id' => $account->id,
             'amount' => $amount,
             'currency_code' => $currencyCode,
-            'amount_base' => $this->normalizeOptionalAmount($entry->amount_base),
+            'amount_base' => $amountBase,
             'category_id' => $category?->id,
             'memo' => $entry->memo,
         ];

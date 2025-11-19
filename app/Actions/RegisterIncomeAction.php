@@ -39,6 +39,8 @@ final class RegisterIncomeAction
             'reference' => $data->reference,
             'source' => $data->source,
             'idempotency_key' => $data->idempotency_key,
+            'exchange_rate' => $data->exchange_rate,
+            'currency_code' => $depositAccount->currency_code,
             'entries' => [
                 [
                     'account_id' => $depositAccount->id,

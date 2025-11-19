@@ -10,7 +10,9 @@ use Spatie\LaravelData\Attributes\Validation\ArrayType;
 use Spatie\LaravelData\Attributes\Validation\Date;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
+use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Required;
+use Spatie\LaravelData\Attributes\Validation\Size;
 use Spatie\LaravelData\Attributes\Validation\StringType;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\DataCollection;
@@ -38,6 +40,12 @@ final class LedgerTransactionData extends Data
 
         #[Nullable, StringType]
         public ?string $idempotency_key = null,
+
+        #[Nullable, Numeric]
+        public int|float|string|null $exchange_rate = null,
+
+        #[Nullable, StringType, Size(3)]
+        public ?string $currency_code = null,
 
         #[Required, ArrayType, Min(2)]
         #[DataCollectionOf(LedgerEntryData::class)]

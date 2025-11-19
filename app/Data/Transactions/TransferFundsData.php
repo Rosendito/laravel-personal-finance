@@ -31,6 +31,12 @@ final class TransferFundsData extends Data
         #[Required, Numeric]
         public int|float|string $amount,
 
+        #[Nullable, Numeric]
+        public int|float|string|null $to_amount = null,
+
+        #[Nullable, Numeric]
+        public int|float|string|null $exchange_rate = null,
+
         #[Nullable, Date]
         public ?CarbonInterface $posted_at = null,
 

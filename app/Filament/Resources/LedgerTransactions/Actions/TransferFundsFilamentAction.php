@@ -15,6 +15,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 final class TransferFundsFilamentAction
@@ -26,8 +28,6 @@ final class TransferFundsFilamentAction
             ->icon('heroicon-o-arrows-right-left')
             ->color('warning')
             ->modalHeading('Transferir Fondos')
-            ->disabled(true)
-            ->tooltip('Próximamente disponible')
             ->schema([
                 Select::make('from_account_id')
                     ->label('Cuenta origen')
@@ -63,13 +63,95 @@ final class TransferFundsFilamentAction
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->native(false),
+                    ->native(false)
+                    ->live(),
                 TextInput::make('amount')
                     ->label('Monto')
                     ->numeric()
                     ->required()
                     ->minValue(0.01)
                     ->step(0.01),
+                TextInput::make('to_amount')
+                    ->label('Monto destino')
+                    ->numeric()
+                    ->minValue(0.01)
+                    ->step(0.01)
+                    ->visible(function (Get $get): bool {
+                        $fromId = $get('from_account_id');
+                        $toId = $get('to_account_id');
+
+                        if (! $fromId || ! $toId) {
+                            return false;
+                        }
+
+                        $fromAccount = LedgerAccount::find($fromId);
+                        $toAccount = LedgerAccount::find($toId);
+
+                        if (! $fromAccount || ! $toAccount) {
+                            return false;
+                        }
+
+                        return $fromAccount->currency_code !== $toAccount->currency_code;
+                    })
+                    ->required(function (Get $get): bool {
+                        $fromId = $get('from_account_id');
+                        $toId = $get('to_account_id');
+
+                        if (! $fromId || ! $toId) {
+                            return false;
+                        }
+
+                        $fromAccount = LedgerAccount::find($fromId);
+                        $toAccount = LedgerAccount::find($toId);
+
+                        if (! $fromAccount || ! $toAccount) {
+                            return false;
+                        }
+
+                        return $fromAccount->currency_code !== $toAccount->currency_code;
+                    }),
+                TextInput::make('exchange_rate')
+                    ->label('Tasa de cambio')
+                    ->numeric()
+                    ->minValue(0.000001)
+                    ->visible(function (Get $get): bool {
+                        $fromId = $get('from_account_id');
+                        $toId = $get('to_account_id');
+
+                        if (! $fromId || ! $toId) {
+                            return false;
+                        }
+
+                        $defaultCurrency = config('finance.currency.default');
+                        $fromAccount = LedgerAccount::find($fromId);
+                        $toAccount = LedgerAccount::find($toId);
+
+                        if (! $fromAccount || ! $toAccount) {
+                            return false;
+                        }
+
+                        return $fromAccount->currency_code !== $defaultCurrency
+                            && $toAccount->currency_code !== $defaultCurrency;
+                    })
+                    ->required(function (Get $get): bool {
+                        $fromId = $get('from_account_id');
+                        $toId = $get('to_account_id');
+
+                        if (! $fromId || ! $toId) {
+                            return false;
+                        }
+
+                        $defaultCurrency = config('finance.currency.default');
+                        $fromAccount = LedgerAccount::find($fromId);
+                        $toAccount = LedgerAccount::find($toId);
+
+                        if (! $fromAccount || ! $toAccount) {
+                            return false;
+                        }
+
+                        return $fromAccount->currency_code !== $defaultCurrency
+                            && $toAccount->currency_code !== $defaultCurrency;
+                    }),
                 TextInput::make('description')
                     ->label('Descripción')
                     ->required()
@@ -103,13 +185,20 @@ final class TransferFundsFilamentAction
                     return;
                 }
 
+                $effectiveAt = Carbon::parse($data['effective_at']);
+                $postedAt = filled($data['posted_at'] ?? null)
+                    ? Carbon::parse($data['posted_at'])
+                    : null;
+
                 $transferFundsData = TransferFundsData::from([
                     'description' => $data['description'],
-                    'effective_at' => $data['effective_at'],
+                    'effective_at' => $effectiveAt,
                     'from_account_id' => $data['from_account_id'],
                     'to_account_id' => $data['to_account_id'],
                     'amount' => $data['amount'],
-                    'posted_at' => $data['posted_at'] ?? null,
+                    'to_amount' => $data['to_amount'] ?? null,
+                    'exchange_rate' => $data['exchange_rate'] ?? null,
+                    'posted_at' => $postedAt,
                     'memo' => $data['memo'] ?? null,
                     'reference' => $data['reference'] ?? null,
                     'source' => 'manual',

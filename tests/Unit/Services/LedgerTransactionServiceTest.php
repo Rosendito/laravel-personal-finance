@@ -19,8 +19,9 @@ describe(LedgerTransactionService::class, function (): void {
     beforeEach(function (): void {
         $this->service = new LedgerTransactionService();
 
-        // Currency 'USD' created by global setup
-        $this->currency = Currency::where('code', 'USD')->firstOrFail();
+        // Use default currency (USDT) for base currency calculations
+        $defaultCurrencyCode = config('finance.currency.default', 'USDT');
+        $this->currency = Currency::where('code', $defaultCurrencyCode)->firstOrFail();
 
         $this->user = User::factory()->create();
 
@@ -287,22 +288,35 @@ describe(LedgerTransactionService::class, function (): void {
         ))->toThrow(LedgerIntegrityException::class, 'multiple budgets');
     });
 
-    it('persists optional amount_base values when provided', function (): void {
+    it('calculates amount_base values when exchange rate is provided', function (): void {
         /** @var callable $makeTransactionData */
         $makeTransactionData = $this->makeTransactionData;
 
-        $data = $makeTransactionData(entries: [
-            [
-                'account_id' => $this->assetAccount->id,
-                'amount' => 750,
-                'amount_base' => '750.25',
+        $eur = Currency::factory()->create(['code' => 'EUR']);
+
+        $eurAccount = LedgerAccount::factory()
+            ->for($this->user)
+            ->ofType(LedgerAccountType::Asset)
+            ->state(['currency_code' => 'EUR'])
+            ->create();
+
+        $data = $makeTransactionData(
+            transactionOverrides: [
+                'currency_code' => 'EUR',
+                'exchange_rate' => '0.92', // 1 USDT = 0.92 EUR
             ],
-            [
-                'account_id' => $this->incomeAccount->id,
-                'amount' => -750,
-                'amount_base' => '-750.25',
-            ],
-        ]);
+            entries: [
+                [
+                    'account_id' => $eurAccount->id,
+                    'amount' => 92, // 92 EUR
+                    'currency_code' => 'EUR',
+                ],
+                [
+                    'account_id' => $this->incomeAccount->id,
+                    'amount' => -100, // -100 USDT (base currency)
+                ],
+            ]
+        );
 
         $transaction = $this->service->create(
             $this->user,
@@ -310,8 +324,14 @@ describe(LedgerTransactionService::class, function (): void {
         );
 
         expect($transaction->entries)->toHaveCount(2);
-        expect($transaction->entries->first()->amount_base)->toBe('750.250000');
-        expect($transaction->entries->last()->amount_base)->toBe('-750.250000');
+
+        $eurEntry = $transaction->entries->firstWhere('account_id', $eurAccount->id);
+        $baseEntry = $transaction->entries->firstWhere('account_id', $this->incomeAccount->id);
+
+        // 92 EUR / 0.92 = 100 USDT base
+        expect($eurEntry->amount_base)->toBe('100.000000');
+        // Base currency entry is already in base currency
+        expect($baseEntry->amount_base)->toBe('-100.000000');
     });
 
     it('rejects categories that belong to another user', function (): void {

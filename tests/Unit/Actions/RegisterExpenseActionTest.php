@@ -29,6 +29,12 @@ describe(RegisterExpenseAction::class, function (): void {
     });
 
     it('creates a transaction debiting the fundamental expense account', function (): void {
+        // Fund the account first
+        \App\Models\LedgerEntry::factory()
+            ->for($this->paymentAccount, 'account')
+            ->for(\App\Models\LedgerTransaction::factory()->create(['user_id' => $this->user->id]), 'transaction')
+            ->create(['amount' => 1000, 'currency_code' => 'USD']);
+
         /** @var RegisterExpenseAction $action */
         $action = $this->action;
 

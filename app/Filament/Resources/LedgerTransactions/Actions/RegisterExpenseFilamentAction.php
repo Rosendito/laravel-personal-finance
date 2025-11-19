@@ -18,6 +18,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -62,13 +63,50 @@ final class RegisterExpenseFilamentAction
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->native(false),
+                    ->native(false)
+                    ->live(),
                 TextInput::make('amount')
                     ->label('Monto')
                     ->numeric()
                     ->required()
                     ->minValue(0.01)
                     ->step(0.01),
+                TextInput::make('exchange_rate')
+                    ->label('Tasa de cambio')
+                    ->numeric()
+                    ->minValue(0.000001)
+                    ->visible(function (Get $get): bool {
+                        $accountId = $get('account_id');
+
+                        if (! $accountId) {
+                            return false;
+                        }
+
+                        $defaultCurrency = config('finance.currency.default');
+                        $account = LedgerAccount::find($accountId);
+
+                        if (! $account) {
+                            return false;
+                        }
+
+                        return $account->currency_code !== $defaultCurrency;
+                    })
+                    ->required(function (Get $get): bool {
+                        $accountId = $get('account_id');
+
+                        if (! $accountId) {
+                            return false;
+                        }
+
+                        $defaultCurrency = config('finance.currency.default');
+                        $account = LedgerAccount::find($accountId);
+
+                        if (! $account) {
+                            return false;
+                        }
+
+                        return $account->currency_code !== $defaultCurrency;
+                    }),
                 TextInput::make('description')
                     ->label('Descripción')
                     ->required()
@@ -133,6 +171,7 @@ final class RegisterExpenseFilamentAction
                     'effective_at' => $effectiveAt,
                     'account_id' => $data['account_id'],
                     'amount' => $data['amount'],
+                    'exchange_rate' => $data['exchange_rate'] ?? null,
                     'posted_at' => $postedAt,
                     'category_id' => $data['category_id'] ?? null,
                     'memo' => $data['memo'] ?? null,

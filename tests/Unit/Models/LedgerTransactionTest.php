@@ -49,6 +49,7 @@ describe(LedgerTransaction::class, function (): void {
             ->for($assetAccount, 'account')
             ->state([
                 'amount' => 150.25,
+                'amount_base' => 150.25,
                 'currency_code' => $currency->code,
             ])
             ->create();
@@ -60,10 +61,71 @@ describe(LedgerTransaction::class, function (): void {
             ->for($incomeAccount, 'account')
             ->state([
                 'amount' => -150.25,
+                'amount_base' => -150.25,
                 'currency_code' => $currency->code,
             ])
             ->create();
 
+        expect($transaction->fresh()->isBalanced())->toBeTrue();
+    });
+
+    it('evaluates double-entry balance on multi-currency transactions', function (): void {
+        $usd = Currency::where('code', 'USD')->firstOrFail();
+        $ves = Currency::firstOrCreate(['code' => 'VES'], ['precision' => 2]);
+
+        $user = User::factory()->create();
+
+        $usdAccount = LedgerAccount::factory()
+            ->for($user)
+            ->ofType(LedgerAccountType::Asset)
+            ->state([
+                'currency_code' => $usd->code,
+                'name' => 'USD Wallet',
+            ])
+            ->create();
+
+        $vesAccount = LedgerAccount::factory()
+            ->for($user)
+            ->ofType(LedgerAccountType::Expense)
+            ->state([
+                'currency_code' => $ves->code,
+                'name' => 'VES Expense',
+            ])
+            ->create();
+
+        $transaction = LedgerTransaction::factory()
+            ->for($user)
+            ->state([
+                'description' => 'Exchange Transaction',
+                'effective_at' => Date::now(),
+                'posted_at' => Date::now()->toDateString(),
+            ])
+            ->create();
+
+        // Entry 1: 100 USD
+        LedgerEntry::factory()
+            ->for($transaction, 'transaction')
+            ->for($usdAccount, 'account')
+            ->state([
+                'amount' => 100.00,
+                'amount_base' => 100.00,
+                'currency_code' => $usd->code,
+            ])
+            ->create();
+
+        // Entry 2: -33000 VES (equivalent to -100 USD base)
+        LedgerEntry::factory()
+            ->for($transaction, 'transaction')
+            ->for($vesAccount, 'account')
+            ->state([
+                'amount' => -33000.00,
+                'amount_base' => -100.00,
+                'currency_code' => $ves->code,
+            ])
+            ->create();
+
+        // Should be balanced because amount_base sums to 0 (100 - 100)
+        // But amount sums to -32900 (100 - 33000)
         expect($transaction->fresh()->isBalanced())->toBeTrue();
     });
 

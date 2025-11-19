@@ -46,6 +46,8 @@ final class RegisterExpenseAction
             'reference' => $data->reference,
             'source' => $data->source,
             'idempotency_key' => $data->idempotency_key,
+            'exchange_rate' => $data->exchange_rate,
+            'currency_code' => $paymentAccount->currency_code,
             'entries' => [
                 [
                     'account_id' => $paymentAccount->id,
