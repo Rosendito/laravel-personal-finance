@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use Spatie\LaravelData\Attributes\Validation\BooleanType;
 use Spatie\LaravelData\Attributes\Validation\IntegerType;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Required;
@@ -27,5 +28,8 @@ final class AccountBalanceData extends Data
 
         #[Required, Numeric]
         public int|float|string $balance,
+
+        #[Required, BooleanType]
+        public bool $is_fundamental,
     ) {}
 }

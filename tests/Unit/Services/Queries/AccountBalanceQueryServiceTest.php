@@ -110,12 +110,15 @@ describe(AccountBalanceQueryService::class, function (): void {
 
         expect($assetBalance)->toBeInstanceOf(AccountBalanceData::class);
         expect($assetBalance->balance)->toBe('1000.000000');
+        expect($assetBalance->is_fundamental)->toBeFalse();
 
         expect($incomeBalance)->toBeInstanceOf(AccountBalanceData::class);
         expect($incomeBalance->balance)->toBe('-1000.000000');
+        expect($incomeBalance->is_fundamental)->toBeFalse();
 
         expect($expenseBalance)->toBeInstanceOf(AccountBalanceData::class);
         expect($expenseBalance->balance)->toBe('0.000000');
+        expect($expenseBalance->is_fundamental)->toBeFalse();
 
         $balancesAll = $this->service->totalsForUser($this->user);
 
@@ -124,8 +127,10 @@ describe(AccountBalanceQueryService::class, function (): void {
 
         expect($assetBalanceAll)->toBeInstanceOf(AccountBalanceData::class);
         expect($assetBalanceAll->balance)->toBe('800.000000');
+        expect($assetBalanceAll->is_fundamental)->toBeFalse();
 
         expect($expenseBalanceAll)->toBeInstanceOf(AccountBalanceData::class);
         expect($expenseBalanceAll->balance)->toBe('200.000000');
+        expect($expenseBalanceAll->is_fundamental)->toBeFalse();
     });
 });

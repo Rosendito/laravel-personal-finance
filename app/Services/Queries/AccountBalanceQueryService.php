@@ -34,6 +34,7 @@ final class AccountBalanceQueryService
                 'a.id',
                 'a.name',
                 'a.currency_code',
+                'a.is_fundamental',
             ])
             ->selectRaw('COALESCE(balances.balance, 0) as balance')
             ->leftJoinSub($entryTotals, 'balances', 'balances.account_id', '=', 'a.id')
@@ -47,6 +48,7 @@ final class AccountBalanceQueryService
                 name: $row->name,
                 currency_code: $row->currency_code,
                 balance: bcadd((string) ($row->balance ?? '0'), '0', 6),
+                is_fundamental: (bool) $row->is_fundamental,
             )
         );
     }
