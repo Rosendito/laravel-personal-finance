@@ -35,7 +35,7 @@ final class EnsureFundamentalAccounts
             // Always append currency code if it's not the default one, OR if we want consistency?
             // The test expects "External Expenses (EUR)" for EUR.
             // But for USD (default), it expects "External Expenses".
-            
+
             // Let's check the config default currency instead of hardcoding 'USD'
             $defaultCurrency = config('finance.currency.default', 'USD');
 
@@ -51,11 +51,11 @@ final class EnsureFundamentalAccounts
             // ->where('type', $accountData['type'])
             // ->where('currency_code', $currencyCode)
             // ->where('is_fundamental', true)
-            
+
             // If I removed the name check, it might match ANY fundamental account of that type/currency.
             // Which is probably what we want: "Does a fundamental Expense account in EUR exist for this user?"
             // If yes, don't create another one.
-            
+
             $exists = LedgerAccount::where('user_id', $user->id)
                 ->where('type', $accountData['type'])
                 ->where('currency_code', $currencyCode)

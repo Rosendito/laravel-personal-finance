@@ -6,13 +6,13 @@ namespace App\Filament\Resources\LedgerTransactions\Tables;
 
 use App\Filament\Resources\LedgerTransactions\Actions\EditLedgerTransactionFilamentAction;
 use App\Helpers\MoneyFormatter;
-use App\Models\BudgetPeriod;
 use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -109,6 +109,20 @@ final class LedgerTransactionsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('category_id')
+                    ->label('Categoría')
+                    ->multiple()
+                    ->relationship(
+                        name: 'categories',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: static function (Builder $query): Builder {
+                            $userId = Auth::id() ?? 0;
+
+                            return $query->where('user_id', $userId)
+                                ->where('is_archived', false)
+                                ->orderBy('name');
+                        },
+                    ),
                 Filter::make('effective_at')
                     ->label('Fecha efectiva')
                     ->schema([
@@ -151,31 +165,11 @@ final class LedgerTransactionsTable
                         }
 
                         return null;
-                    }),
-                SelectFilter::make('source')
-                    ->label('Origen')
-                    ->options([
-                        'manual' => 'Manual',
-                        'import' => 'Importación',
-                        'api' => 'API',
-                    ]),
-                SelectFilter::make('budget_period_id')
-                    ->label('Período presupuestario')
-                    ->relationship(
-                        name: 'budgetPeriod',
-                        titleAttribute: 'id',
-                        modifyQueryUsing: static function (Builder $query): Builder {
-                            $userId = Auth::id() ?? 0;
-
-                            return $query->whereHas('budget', static function (Builder $q) use ($userId): Builder {
-                                return $q->where('user_id', $userId);
-                            });
-                        },
-                    )
-                    ->getOptionLabelFromRecordUsing(
-                        static fn (Model $record): string => $record instanceof BudgetPeriod ? $record->range_label : '',
-                    ),
-            ])
+                    })
+                    ->columns(2)
+                    ->columnSpan(2),
+            ], layout: FiltersLayout::Modal)
+            ->filtersFormColumns(3)
             ->recordActions([
                 EditLedgerTransactionFilamentAction::make(),
                 ViewAction::make(),

@@ -111,7 +111,7 @@ final class LedgerTransactionService
         }
 
         // Allow small rounding difference for base currency conversion (e.g. 0.01)
-        $absTotal = str_starts_with($total, '-') ? substr($total, 1) : $total;
+        $absTotal = str_starts_with($total, '-') ? mb_substr($total, 1) : $total;
 
         if (bccomp($absTotal, '0.01', 6) === 1) {
             throw LedgerIntegrityException::unbalancedEntries();
@@ -219,8 +219,8 @@ final class LedgerTransactionService
                 $amount = (string) abs((float) $entry->amount);
 
                 if (bccomp($unknownTotalAmount, '0', 6) === 0) {
-                     // Should not happen if there are entries, unless amounts are 0
-                     $share = '0';
+                    // Should not happen if there are entries, unless amounts are 0
+                    $share = '0';
                 } else {
                     // share = remainingBase * (amount / unknownTotalAmount)
                     $ratio = bcdiv($amount, $unknownTotalAmount, 10);

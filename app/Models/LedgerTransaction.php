@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 final class LedgerTransaction extends Model
 {
@@ -28,6 +29,18 @@ final class LedgerTransaction extends Model
     public function budgetPeriod(): BelongsTo
     {
         return $this->belongsTo(BudgetPeriod::class);
+    }
+
+    public function categories(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Category::class,
+            LedgerEntry::class,
+            'transaction_id',
+            'id',
+            'id',
+            'category_id',
+        );
     }
 
     public function isBalanced(): bool
