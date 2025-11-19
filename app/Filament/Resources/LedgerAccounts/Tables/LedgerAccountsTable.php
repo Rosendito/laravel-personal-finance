@@ -58,6 +58,10 @@ final class LedgerAccountsTable
                     ->label('Archivada')
                     ->boolean()
                     ->alignCenter(),
+                IconColumn::make('is_fundamental')
+                    ->label('Fundamental')
+                    ->boolean()
+                    ->alignCenter(),
                 TextColumn::make('updated_at')
                     ->label('Actualizada')
                     ->dateTime()
@@ -89,6 +93,16 @@ final class LedgerAccountsTable
                     ->placeholder('Todas')
                     ->trueLabel('Archivadas')
                     ->falseLabel('Activas'),
+                TernaryFilter::make('is_fundamental')
+                    ->label('Fundamental')
+                    ->placeholder('Todas')
+                    ->trueLabel('Fundamentales')
+                    ->falseLabel('No Fundamentales')
+                    ->queries(
+                        true: fn (Builder $query) => $query->where('is_fundamental', true),
+                        false: fn (Builder $query) => $query->where('is_fundamental', false),
+                    )
+                    ->default(false),
             ])
             ->recordActions([
                 EditAction::make(),

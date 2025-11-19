@@ -52,4 +52,14 @@ final class AccountBalanceQueryService
             )
         );
     }
+
+    public function balanceForAccount(int $accountId): string
+    {
+        $balance = DB::query()
+            ->from('ledger_entries')
+            ->where('account_id', $accountId)
+            ->sum('amount');
+
+        return bcadd((string) ($balance ?? '0'), '0', 6);
+    }
 }

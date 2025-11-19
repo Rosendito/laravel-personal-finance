@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 final class Budget extends Model
@@ -28,6 +29,11 @@ final class Budget extends Model
     public function periods(): HasMany
     {
         return $this->hasMany(BudgetPeriod::class);
+    }
+
+    public function currentPeriod(): HasOne
+    {
+        return $this->hasOne(BudgetPeriod::class)->latest('start_at');
     }
 
     public function currentBalanceAggregate(): MorphOne

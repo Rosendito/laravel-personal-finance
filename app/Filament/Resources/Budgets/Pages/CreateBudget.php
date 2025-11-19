@@ -23,8 +23,7 @@ final class CreateBudget extends CreateRecord
         unset(
             $data['first_start_at'],
             $data['first_end_at'],
-            $data['first_amount'],
-            $data['first_currency_code']
+            $data['first_amount']
         );
 
         return $data;
@@ -40,15 +39,13 @@ final class CreateBudget extends CreateRecord
             isset(
                 $data['first_start_at'],
                 $data['first_end_at'],
-                $data['first_amount'],
-                $data['first_currency_code']
+                $data['first_amount']
             )
         ) {
             $budget->periods()->create([
                 'start_at' => $data['first_start_at'],
                 'end_at' => $data['first_end_at'],
                 'amount' => $data['first_amount'],
-                'currency_code' => $data['first_currency_code'],
             ]);
         }
     }

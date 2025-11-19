@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Budgets\RelationManagers;
 
-use App\Models\Currency;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -62,12 +60,6 @@ final class PeriodsRelationManager extends RelationManager
                     ->minValue(0)
                     ->step('0.01')
                     ->rule('decimal:0,6'),
-                Select::make('currency_code')
-                    ->label('Currency')
-                    ->default(static fn (): ?string => $lastPeriod?->currency_code ?? Currency::query()->first()?->code)
-                    ->required()
-                    ->options(Currency::query()->pluck('code', 'code'))
-                    ->searchable(),
             ]);
     }
 
@@ -88,15 +80,11 @@ final class PeriodsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('amount')
                     ->label('Budgeted')
-                    ->money(static fn (Model $record): string => $record->currency_code)
-                    ->sortable(),
-                TextColumn::make('currency_code')
-                    ->label('Currency')
-                    ->badge()
+                    ->numeric(2)
                     ->sortable(),
                 TextColumn::make('spent_amount')
                     ->label('Spent')
-                    ->money(static fn (Model $record): string => $record->currency_code)
+                    ->numeric(2)
                     ->state(static fn (Model $record): string => $record->spent_amount)
                     ->color(static function (Model $record, $state): string {
                         $spent = (float) $state;
@@ -114,7 +102,7 @@ final class PeriodsRelationManager extends RelationManager
                     }),
                 TextColumn::make('remaining_amount')
                     ->label('Remaining')
-                    ->money(static fn (Model $record): string => $record->currency_code)
+                    ->numeric(2)
                     ->state(static fn (Model $record): string => $record->remaining_amount)
                     ->color(static function ($state): string {
                         $remaining = (float) $state;

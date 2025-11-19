@@ -91,4 +91,9 @@ final class LedgerIntegrityException extends RuntimeException
             $currencyCode,
         ));
     }
+
+    public static function insufficientFunds(): self
+    {
+        return new self('Insufficient funds in the account.');
+    }
 }

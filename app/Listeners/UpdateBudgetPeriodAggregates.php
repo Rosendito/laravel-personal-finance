@@ -36,5 +36,10 @@ final class UpdateBudgetPeriodAggregates
                 'value_json' => null,
             ],
         );
+
+        // Refresh the aggregates relationship if it was loaded to ensure the cached value is up to date
+        if ($period->relationLoaded('aggregates')) {
+            $period->load('aggregates');
+        }
     }
 }

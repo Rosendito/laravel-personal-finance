@@ -18,19 +18,26 @@ final class RegisterExpenseAction
     public function __construct(
         private readonly LedgerTransactionService $ledgerTransactionService,
         private readonly ResolveFundamentalAccount $resolveFundamentalAccount,
+        private readonly \App\Services\Queries\AccountBalanceQueryService $accountBalanceQuery,
     ) {}
 
     public function execute(User $user, RegisterExpenseData $data): LedgerTransaction
     {
         $paymentAccount = $this->findAccountForUser($user, $data->account_id);
 
+        $amount = $this->formatAmount($data->amount);
+
+        $currentBalance = $this->accountBalanceQuery->balanceForAccount($paymentAccount->id);
+
+        if (bccomp($currentBalance, $amount, 6) === -1) {
+            throw LedgerIntegrityException::insufficientFunds();
+        }
+
         $expenseSinkAccount = $this->resolveFundamentalAccount->execute(
             $user,
             $paymentAccount->currency_code,
             LedgerAccountType::Expense,
         );
-
-        $amount = $this->formatAmount($data->amount);
 
         $transactionData = LedgerTransactionData::from([
             'description' => $data->description,

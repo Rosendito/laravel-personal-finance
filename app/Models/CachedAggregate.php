@@ -29,7 +29,7 @@ final class CachedAggregate extends Model
             'aggregatable_type' => 'string',
             'key' => 'string',
             'scope' => 'string',
-            'value_decimal' => 'decimal:4',
+            'value_decimal' => 'decimal:6',
             'value_int' => 'integer',
             'value_json' => 'array',
             'created_at' => 'datetime',

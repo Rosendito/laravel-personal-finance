@@ -68,7 +68,6 @@ final class LedgerAccountResource extends Resource
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->where('user_id', $userId)
-            ->where('is_fundamental', false);
+        return $query->where('user_id', $userId);
     }
 }

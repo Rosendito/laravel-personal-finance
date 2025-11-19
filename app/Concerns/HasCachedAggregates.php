@@ -52,7 +52,7 @@ trait HasCachedAggregates
         CachedAggregateKey|string $key,
         CachedAggregateScope|string|null $scope = null,
     ): Builder {
-        $query = $this->aggregates()->where('key', $this->resolveAggregateKey($key));
+        $query = $this->aggregates()->getQuery()->where('key', $this->resolveAggregateKey($key));
 
         $scopeValue = $this->resolveAggregateScope($scope);
 

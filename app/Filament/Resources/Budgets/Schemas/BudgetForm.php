@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Budgets\Schemas;
 
-use App\Models\Currency;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
@@ -63,13 +61,6 @@ final class BudgetForm
                         ->minValue(0)
                         ->step('0.01')
                         ->rule('decimal:0,6')
-                        ->hiddenOn('edit'),
-                    Select::make('first_currency_code')
-                        ->label('Currency')
-                        ->default(static fn (): ?string => Currency::query()->first()?->code)
-                        ->required()
-                        ->options(Currency::query()->pluck('code', 'code'))
-                        ->searchable()
                         ->hiddenOn('edit'),
                 ])
                 ->hiddenOn('edit'),

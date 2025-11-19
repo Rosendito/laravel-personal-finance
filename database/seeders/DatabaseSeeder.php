@@ -6,7 +6,12 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\User;
+use App\Models\Budget;
+use App\Models\Currency;
+use App\Models\LedgerAccount;
 use Illuminate\Database\Seeder;
+use App\Enums\LedgerAccountType;
+use App\Actions\EnsureFundamentalAccounts;
 
 final class DatabaseSeeder extends Seeder
 {
@@ -15,6 +20,20 @@ final class DatabaseSeeder extends Seeder
         $user = User::factory()->create([
             'name' => 'Demo User',
             'email' => 'demo@example.com',
+        ]);
+
+        $currency = Currency::find('USDT');
+
+        LedgerAccount::factory()->for($user)->create([
+            'user_id' => $user->id,
+            'name' => 'Binance USDT',
+            'type' => LedgerAccountType::Asset,
+            'currency_code' => $currency->code,
+        ]);
+
+        Budget::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'Comida',
         ]);
     }
 }

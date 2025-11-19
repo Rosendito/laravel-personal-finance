@@ -41,6 +41,7 @@ final class EnsureFundamentalAccounts
                 ->where('name', $accountName)
                 ->where('type', $accountData['type'])
                 ->where('currency_code', $currencyCode)
+                ->where('is_fundamental', true)
                 ->exists();
 
             if ($exists) {
