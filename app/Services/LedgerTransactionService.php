@@ -36,21 +36,24 @@ final class LedgerTransactionService
         $this->assertEntryCount($entryCollection);
 
         $accounts = $this->loadAccounts($entryCollection);
-        $categories = $this->loadCategories($entryCollection);
+        $category = $this->loadCategory($transactionData);
+
+        if ($category !== null) {
+            $this->assertCategoryOwnership($category, $user);
+        }
 
         $baseAmounts = $this->calculateBaseAmounts($entryCollection, $accounts, $transactionData);
 
         $this->assertEntriesAreBalanced($baseAmounts);
 
-        $budgetPeriod = $this->determineBudgetPeriod($entryCollection, $categories, $transactionData->effective_at);
+        $budgetPeriod = $this->determineBudgetPeriod($category, $transactionData->effective_at);
 
         $normalizedEntries = $entryCollection
             ->map(fn (LedgerEntryData $entry, int $index): array => $this->normalizeEntry(
                 $entry,
                 $baseAmounts[$index],
                 $user,
-                $accounts,
-                $categories
+                $accounts
             ))
             ->all();
 
@@ -134,21 +137,19 @@ final class LedgerTransactionService
             ->keyBy(fn (LedgerAccount $account): int => $account->id);
     }
 
-    /**
-     * @param  Collection<int, LedgerEntryData>  $entries
-     * @return Collection<int, Category>
-     */
-    private function loadCategories(Collection $entries): Collection
+    private function loadCategory(LedgerTransactionData $transactionData): ?Category
     {
-        $categoryIds = $entries
-            ->map(fn (LedgerEntryData $entry): ?int => $entry->category_id)
-            ->filter()
-            ->unique();
+        if ($transactionData->category_id === null) {
+            return null;
+        }
 
-        return Category::query()
-            ->whereIn('id', $categoryIds)
-            ->get()
-            ->keyBy(fn (Category $category): int => $category->id);
+        $category = Category::query()->find($transactionData->category_id);
+
+        if ($category === null) {
+            throw LedgerIntegrityException::categoryNotFound($transactionData->category_id);
+        }
+
+        return $category;
     }
 
     /**
@@ -237,15 +238,13 @@ final class LedgerTransactionService
 
     /**
      * @param  Collection<int, LedgerAccount>  $accounts
-     * @param  Collection<int, Category>  $categories
      * @return array<string, mixed>
      */
     private function normalizeEntry(
         LedgerEntryData $entry,
         string $amountBase,
         User $user,
-        Collection $accounts,
-        Collection $categories
+        Collection $accounts
     ): array {
         $account = $this->resolveAccount($entry->account_id, $accounts);
         $this->assertAccountOwnership($account, $user);
@@ -253,75 +252,35 @@ final class LedgerTransactionService
         $amount = $this->normalizeAmount($entry->amount);
         $currencyCode = $this->determineCurrencyCode($entry, $account);
 
-        $category = $this->resolveCategory($entry->category_id, $categories);
-        $this->assertCategoryOwnership($category, $user);
-
         return [
             'account_id' => $account->id,
             'amount' => $amount,
             'currency_code' => $currencyCode,
             'amount_base' => $amountBase,
-            'category_id' => $category?->id,
             'memo' => $entry->memo,
         ];
     }
 
     private function determineBudgetPeriod(
-        Collection $entries,
-        Collection $categories,
+        ?Category $category,
         CarbonInterface $effectiveAt
     ): ?BudgetPeriod {
-        $budgetIds = $this->resolveBudgetIds($entries, $categories);
-
-        if ($budgetIds->isEmpty()) {
+        if ($category === null || $category->budget_id === null) {
             return null;
         }
 
-        if ($budgetIds->count() > 1) {
-            throw LedgerIntegrityException::mixedBudgetAssignments();
-        }
-
-        /** @var int $budgetId */
-        $budgetId = $budgetIds->first();
-
         $period = BudgetPeriod::query()
-            ->where('budget_id', $budgetId)
+            ->where('budget_id', $category->budget_id)
             ->where('start_at', '<=', $effectiveAt->toDateString())
             ->where('end_at', '>', $effectiveAt->toDateString())
             ->orderByDesc('start_at')
             ->first();
 
         if ($period === null) {
-            throw LedgerIntegrityException::budgetPeriodNotFound($budgetId, $effectiveAt->toDateString());
+            throw LedgerIntegrityException::budgetPeriodNotFound($category->budget_id, $effectiveAt->toDateString());
         }
 
         return $period;
-    }
-
-    /**
-     * @param  Collection<int, LedgerEntryData>  $entries
-     * @param  Collection<int, Category>  $categories
-     * @return Collection<int, int>
-     */
-    private function resolveBudgetIds(Collection $entries, Collection $categories): Collection
-    {
-        return $entries
-            ->map(fn (LedgerEntryData $entry): ?int => $entry->category_id)
-            ->filter()
-            ->unique()
-            ->map(function (int $categoryId) use ($categories): ?int {
-                /** @var Category|null $category */
-                $category = $categories->get($categoryId);
-
-                if ($category === null) {
-                    throw LedgerIntegrityException::categoryNotFound($categoryId);
-                }
-
-                return $category->budget_id;
-            })
-            ->filter(static fn (?int $budgetId): bool => $budgetId !== null)
-            ->unique()
-            ->values();
     }
 
     private function buildTransactionAttributes(
@@ -338,6 +297,7 @@ final class LedgerTransactionService
             'idempotency_key' => $transactionData->idempotency_key,
             'user_id' => $user->id,
             'budget_period_id' => $budgetPeriod?->id,
+            'category_id' => $transactionData->category_id,
         ];
     }
 
@@ -354,25 +314,6 @@ final class LedgerTransactionService
         }
 
         return $account;
-    }
-
-    /**
-     * @param  Collection<int, Category>  $categories
-     */
-    private function resolveCategory(?int $categoryId, Collection $categories): ?Category
-    {
-        if ($categoryId === null) {
-            return null;
-        }
-
-        /** @var Category|null $category */
-        $category = $categories->get($categoryId);
-
-        if ($category === null) {
-            throw LedgerIntegrityException::categoryNotFound($categoryId);
-        }
-
-        return $category;
     }
 
     private function normalizeAmount(int|float|string $amount): string

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Category;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
@@ -29,19 +28,11 @@ final class LedgerEntryFactory extends Factory
         return [
             'transaction_id' => LedgerTransaction::factory(),
             'account_id' => LedgerAccount::factory(),
-            'category_id' => null,
             'amount' => $sign * $amount,
             'currency_code' => fn (array $attributes): string => $this->resolveCurrencyCode($attributes['account_id'] ?? null),
             'amount_base' => null,
             'memo' => fake()->optional()->sentence(),
         ];
-    }
-
-    public function withCategory(Category|int|null $category): self
-    {
-        return $this->state(fn (): array => [
-            'category_id' => $category instanceof Category ? $category->id : ($category ?? Category::factory()),
-        ]);
     }
 
     private function resolveCurrencyCode(int|string|null $accountId): string

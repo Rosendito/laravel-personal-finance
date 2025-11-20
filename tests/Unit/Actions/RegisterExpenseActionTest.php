@@ -67,10 +67,10 @@ describe(RegisterExpenseAction::class, function (): void {
             ->firstWhere('account_id', $expenseAccount->id);
 
         expect($transaction->description)->toBe('Grocery shopping')
+            ->and($transaction->category_id)->toBe($this->expenseCategory->id)
             ->and($paymentEntry->amount)->toBe('-275.450000')
             ->and($paymentEntry->memo)->toBe('Weekly groceries')
-            ->and($expenseEntry->amount)->toBe('275.450000')
-            ->and($expenseEntry->category_id)->toBe($this->expenseCategory->id);
+            ->and($expenseEntry->amount)->toBe('275.450000');
     });
 
     it('rejects accounts that do not belong to the user', function (): void {

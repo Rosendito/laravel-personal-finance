@@ -38,6 +38,9 @@ final class LedgerTransactionInfolist
                         TextEntry::make('budgetPeriod.budget.name')
                             ->label('Presupuesto')
                             ->placeholder('—'),
+                        TextEntry::make('category.name')
+                            ->label('Categoría')
+                            ->placeholder('—'),
                     ])
                     ->columns(2),
                 Section::make('Movimientos')
@@ -54,14 +57,9 @@ final class LedgerTransactionInfolist
 
                                 $accountName = $entry->account->name ?? 'N/A';
                                 $formattedAmount = MoneyFormatter::format($entry->amount, $entry->currency_code ?? '');
-                                $category = $entry->category?->name;
                                 $memo = $entry->memo;
 
                                 $line = "{$accountName}: {$formattedAmount}";
-
-                                if ($category !== null) {
-                                    $line .= " ({$category})";
-                                }
 
                                 if ($memo !== null) {
                                     $line .= " - {$memo}";

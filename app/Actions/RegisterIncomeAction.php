@@ -41,6 +41,7 @@ final class RegisterIncomeAction
             'idempotency_key' => $data->idempotency_key,
             'exchange_rate' => $data->exchange_rate,
             'currency_code' => $depositAccount->currency_code,
+            'category_id' => $data->category_id,
             'entries' => [
                 [
                     'account_id' => $depositAccount->id,
@@ -50,7 +51,6 @@ final class RegisterIncomeAction
                 [
                     'account_id' => $incomeSourceAccount->id,
                     'amount' => $this->invertAmount($amount),
-                    'category_id' => $data->category_id,
                 ],
             ],
         ]);

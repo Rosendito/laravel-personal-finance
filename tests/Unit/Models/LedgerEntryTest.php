@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Enums\LedgerAccountType;
 use App\Exceptions\LedgerIntegrityException;
-use App\Models\Category;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
 use App\Models\LedgerEntry;
@@ -78,24 +77,5 @@ describe(LedgerEntry::class, function (): void {
                 'amount' => 25,
             ])
             ->create())->toThrow(LedgerIntegrityException::class, 'same user');
-    });
-
-    it('ensures categories belong to the transaction user', function (): void {
-        $category = Category::factory()
-            ->expense()
-            ->for(User::factory()->create())
-            ->state([
-                'name' => 'Foreign Category',
-            ])
-            ->create();
-
-        expect(fn (): LedgerEntry => LedgerEntry::factory()
-            ->for($this->transaction, 'transaction')
-            ->for($this->assetAccount, 'account')
-            ->state([
-                'amount' => 12,
-                'category_id' => $category->id,
-            ])
-            ->create())->toThrow(LedgerIntegrityException::class, 'category');
     });
 });

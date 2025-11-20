@@ -35,11 +35,6 @@ final class Category extends Model
         return $this->hasMany(self::class, 'parent_id');
     }
 
-    public function entries(): HasMany
-    {
-        return $this->hasMany(LedgerEntry::class, 'category_id');
-    }
-
     public function budget(): BelongsTo
     {
         return $this->belongsTo(Budget::class);
@@ -49,8 +44,12 @@ final class Category extends Model
     {
         return $query
             ->addSelect([
-                'balance' => LedgerEntry::selectRaw('COALESCE(SUM(amount_base), 0)')
-                    ->whereColumn('category_id', 'categories.id'),
+                'balance' => LedgerEntry::query()
+                    ->selectRaw('COALESCE(SUM(COALESCE(ledger_entries.amount_base, ledger_entries.amount)), 0)')
+                    ->join('ledger_transactions', 'ledger_entries.transaction_id', '=', 'ledger_transactions.id')
+                    ->join('ledger_accounts', 'ledger_entries.account_id', '=', 'ledger_accounts.id')
+                    ->whereColumn('ledger_transactions.category_id', 'categories.id')
+                    ->whereColumn('ledger_accounts.type', 'categories.type'),
             ]);
     }
 

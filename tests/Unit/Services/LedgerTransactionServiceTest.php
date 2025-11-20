@@ -141,17 +141,21 @@ describe(LedgerTransactionService::class, function (): void {
             ])
             ->create();
 
-        $data = $makeTransactionData(entries: [
-            [
-                'account_id' => $foreignAccount->id,
-                'amount' => 200,
-            ],
-            [
-                'account_id' => $this->incomeAccount->id,
-                'amount' => -200,
+        $data = $makeTransactionData(
+            transactionOverrides: [
                 'category_id' => $category->id,
             ],
-        ]);
+            entries: [
+                [
+                    'account_id' => $foreignAccount->id,
+                    'amount' => 200,
+                ],
+                [
+                    'account_id' => $this->incomeAccount->id,
+                    'amount' => -200,
+                ],
+            ],
+        );
 
         expect(fn (): mixed => $this->service->create(
             $this->user,
@@ -177,6 +181,7 @@ describe(LedgerTransactionService::class, function (): void {
                 'source' => 'import',
                 'idempotency_key' => 'txn-pay-999',
                 'posted_at' => Date::now()->addDay(),
+                'category_id' => $category->id,
             ],
             entries: [
                 [
@@ -188,7 +193,6 @@ describe(LedgerTransactionService::class, function (): void {
                     'account_id' => $this->incomeAccount->id,
                     'amount' => 1_500,
                     'memo' => 'Rent offset',
-                    'category_id' => $category->id,
                 ],
             ],
         );
@@ -200,9 +204,9 @@ describe(LedgerTransactionService::class, function (): void {
 
         expect($transaction->reference)->toBe('PAY-999');
         expect($transaction->idempotency_key)->toBe('txn-pay-999');
+        expect($transaction->category_id)->toBe($category->id);
         expect($transaction->entries->first()->memo)->toBe('Rent payment');
         expect($transaction->entries->last()->memo)->toBe('Rent offset');
-        expect($transaction->entries->firstWhere('category_id', $category->id))->not->toBeNull();
     });
 
     it('snapshots the budget assigned to referenced categories', function (): void {
@@ -230,17 +234,21 @@ describe(LedgerTransactionService::class, function (): void {
             ])
             ->create();
 
-        $data = $makeTransactionData(entries: [
-            [
-                'account_id' => $this->assetAccount->id,
-                'amount' => -1_000,
-            ],
-            [
-                'account_id' => $this->incomeAccount->id,
-                'amount' => 1_000,
+        $data = $makeTransactionData(
+            transactionOverrides: [
                 'category_id' => $category->id,
             ],
-        ]);
+            entries: [
+                [
+                    'account_id' => $this->assetAccount->id,
+                    'amount' => -1_000,
+                ],
+                [
+                    'account_id' => $this->incomeAccount->id,
+                    'amount' => 1_000,
+                ],
+            ],
+        );
 
         $transaction = $this->service->create(
             $this->user,
@@ -250,12 +258,17 @@ describe(LedgerTransactionService::class, function (): void {
         expect($transaction->budget_period_id)->toBe($period->id);
     });
 
-    it('rejects transactions that mix categories from different budgets', function (): void {
+    it('assigns budget period based on transaction category', function (): void {
         /** @var callable $makeTransactionData */
         $makeTransactionData = $this->makeTransactionData;
 
         $foodBudget = Budget::factory()->for($this->user)->state(['name' => 'Food'])->create();
-        $rentBudget = Budget::factory()->for($this->user)->state(['name' => 'Rent'])->create();
+        $periodStart = Date::now()->startOfMonth();
+
+        $period = BudgetPeriod::factory()
+            ->for($foodBudget)
+            ->startingAt($periodStart, $periodStart->copy()->addMonth())
+            ->create();
 
         $foodCategory = Category::factory()
             ->expense()
@@ -263,29 +276,28 @@ describe(LedgerTransactionService::class, function (): void {
             ->state(['budget_id' => $foodBudget->id])
             ->create();
 
-        $rentCategory = Category::factory()
-            ->expense()
-            ->for($this->user)
-            ->state(['budget_id' => $rentBudget->id])
-            ->create();
-
-        $data = $makeTransactionData(entries: [
-            [
-                'account_id' => $this->assetAccount->id,
-                'amount' => -700,
+        $data = $makeTransactionData(
+            transactionOverrides: [
                 'category_id' => $foodCategory->id,
             ],
-            [
-                'account_id' => $this->incomeAccount->id,
-                'amount' => 700,
-                'category_id' => $rentCategory->id,
+            entries: [
+                [
+                    'account_id' => $this->assetAccount->id,
+                    'amount' => -700,
+                ],
+                [
+                    'account_id' => $this->incomeAccount->id,
+                    'amount' => 700,
+                ],
             ],
-        ]);
+        );
 
-        expect(fn (): mixed => $this->service->create(
+        $transaction = $this->service->create(
             $this->user,
             $data,
-        ))->toThrow(LedgerIntegrityException::class, 'multiple budgets');
+        );
+
+        expect($transaction->budget_period_id)->toBe($period->id);
     });
 
     it('calculates amount_base values when exchange rate is provided', function (): void {
@@ -343,17 +355,21 @@ describe(LedgerTransactionService::class, function (): void {
             ->for(User::factory()->create())
             ->create();
 
-        $data = $makeTransactionData(entries: [
-            [
-                'account_id' => $this->assetAccount->id,
-                'amount' => 200,
-            ],
-            [
-                'account_id' => $this->incomeAccount->id,
-                'amount' => -200,
+        $data = $makeTransactionData(
+            transactionOverrides: [
                 'category_id' => $foreignCategory->id,
             ],
-        ]);
+            entries: [
+                [
+                    'account_id' => $this->assetAccount->id,
+                    'amount' => 200,
+                ],
+                [
+                    'account_id' => $this->incomeAccount->id,
+                    'amount' => -200,
+                ],
+            ],
+        );
 
         expect(fn (): mixed => $this->service->create(
             $this->user,

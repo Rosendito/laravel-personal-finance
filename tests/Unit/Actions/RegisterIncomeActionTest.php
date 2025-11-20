@@ -62,10 +62,10 @@ describe(RegisterIncomeAction::class, function (): void {
 
         expect($transaction->description)->toBe('Salary payment')
             ->and($transaction->reference)->toBe('PAY-2024-09')
+            ->and($transaction->category_id)->toBe($this->incomeCategory->id)
             ->and($depositEntry->amount)->toBe('1500.000000')
             ->and($depositEntry->memo)->toBe('Company payroll')
-            ->and($incomeEntry->amount)->toBe('-1500.000000')
-            ->and($incomeEntry->category_id)->toBe($this->incomeCategory->id);
+            ->and($incomeEntry->amount)->toBe('-1500.000000');
     });
 
     it('rejects accounts that do not belong to the user', function (): void {

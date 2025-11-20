@@ -25,11 +25,6 @@ final class LedgerEntry extends Model
         return $this->belongsTo(LedgerAccount::class, 'account_id');
     }
 
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class, 'category_id');
-    }
-
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code', 'code');
@@ -45,7 +40,6 @@ final class LedgerEntry extends Model
 
             $entry->alignCurrencyWithAccount($account);
             $entry->assertAccountBelongsToTransactionUser($account, $transaction);
-            $entry->assertCategoryBelongsToUser($transaction);
         });
     }
 
@@ -57,7 +51,6 @@ final class LedgerEntry extends Model
         return [
             'transaction_id' => 'integer',
             'account_id' => 'integer',
-            'category_id' => 'integer',
             'amount' => 'decimal:6',
             'amount_base' => 'decimal:6',
             'currency_code' => 'string',
@@ -130,40 +123,5 @@ final class LedgerEntry extends Model
         if ($account->user_id !== $transaction->user_id) {
             throw LedgerIntegrityException::accountOwnershipMismatch();
         }
-    }
-
-    private function assertCategoryBelongsToUser(LedgerTransaction $transaction): void
-    {
-        if ($this->category_id === null) {
-            return;
-        }
-
-        $category = $this->resolveCategory();
-
-        if ($category->user_id !== $transaction->user_id) {
-            throw LedgerIntegrityException::categoryOwnershipMismatch();
-        }
-    }
-
-    private function resolveCategory(): ?Category
-    {
-        if ($this->category_id === null) {
-            return null;
-        }
-
-        if ($this->relationLoaded('category')) {
-            /** @var Category|null $category */
-            $category = $this->getRelation('category');
-
-            return $category;
-        }
-
-        $category = Category::query()->find($this->category_id);
-
-        if ($category === null) {
-            throw LedgerIntegrityException::categoryNotFound((int) $this->category_id);
-        }
-
-        return $category;
     }
 }

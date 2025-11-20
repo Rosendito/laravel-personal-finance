@@ -48,6 +48,7 @@ final class RegisterExpenseAction
             'idempotency_key' => $data->idempotency_key,
             'exchange_rate' => $data->exchange_rate,
             'currency_code' => $paymentAccount->currency_code,
+            'category_id' => $data->category_id,
             'entries' => [
                 [
                     'account_id' => $paymentAccount->id,
@@ -57,7 +58,6 @@ final class RegisterExpenseAction
                 [
                     'account_id' => $expenseSinkAccount->id,
                     'amount' => $amount,
-                    'category_id' => $data->category_id,
                 ],
             ],
         ]);

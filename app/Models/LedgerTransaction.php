@@ -6,11 +6,11 @@ namespace App\Models;
 
 use Database\Factories\LedgerTransactionFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 final class LedgerTransaction extends Model
 {
@@ -32,16 +32,24 @@ final class LedgerTransaction extends Model
         return $this->belongsTo(BudgetPeriod::class);
     }
 
-    public function categories(): HasManyThrough
+    public function category(): BelongsTo
     {
-        return $this->hasManyThrough(
-            Category::class,
-            LedgerEntry::class,
-            'transaction_id',
-            'id',
-            'id',
-            'category_id',
-        );
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Get categories as a collection for compatibility with existing code.
+     * Returns a collection with the category if it exists, empty collection otherwise.
+     *
+     * @return Collection<int, Category>
+     */
+    public function getCategoriesAttribute(): Collection
+    {
+        if ($this->category_id === null) {
+            return new Collection();
+        }
+
+        return new Collection([$this->category]);
     }
 
     public function scopeWithAmountSummary(Builder $query): Builder
@@ -88,6 +96,7 @@ final class LedgerTransaction extends Model
         return [
             'user_id' => 'integer',
             'budget_period_id' => 'integer',
+            'category_id' => 'integer',
             'description' => 'string',
             'effective_at' => 'datetime',
             'posted_at' => 'date',

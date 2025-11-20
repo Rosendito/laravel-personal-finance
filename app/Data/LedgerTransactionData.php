@@ -8,6 +8,7 @@ use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\Validation\ArrayType;
 use Spatie\LaravelData\Attributes\Validation\Date;
+use Spatie\LaravelData\Attributes\Validation\IntegerType;
 use Spatie\LaravelData\Attributes\Validation\Min;
 use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
@@ -46,6 +47,9 @@ final class LedgerTransactionData extends Data
 
         #[Nullable, StringType, Size(3)]
         public ?string $currency_code = null,
+
+        #[Nullable, IntegerType]
+        public ?int $category_id = null,
 
         #[Required, ArrayType, Min(2)]
         #[DataCollectionOf(LedgerEntryData::class)]

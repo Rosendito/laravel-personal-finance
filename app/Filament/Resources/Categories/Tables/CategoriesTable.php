@@ -54,10 +54,18 @@ final class CategoriesTable
                     ->toggleable(),
                 TextColumn::make('balance')
                     ->label('Balance')
-                    ->state(static fn (Category $record): string => MoneyFormatter::format(
-                        $record->balance ?? 0,
-                        config('finance.currency.default'),
-                    ))
+                    ->state(static function (Category $record): string {
+                        $balance = (string) ($record->balance ?? '0');
+
+                        if ($record->type === CategoryType::Income && str_starts_with($balance, '-')) {
+                            $balance = mb_ltrim($balance, '-');
+                        }
+
+                        return MoneyFormatter::format(
+                            $balance,
+                            config('finance.currency.default'),
+                        );
+                    })
                     ->alignRight()
                     ->sortable(),
                 TextColumn::make('entries_count')

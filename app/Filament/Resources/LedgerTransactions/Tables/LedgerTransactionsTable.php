@@ -33,7 +33,7 @@ final class LedgerTransactionsTable
                     ->withBaseAmountSummary()
                     ->with([
                         'entries.account',
-                        'categories',
+                        'category',
                         'budgetPeriod.budget',
                     ]),
             )
@@ -84,13 +84,7 @@ final class LedgerTransactionsTable
                 TextColumn::make('category_summary')
                     ->label('Categoría')
                     ->state(static function (LedgerTransaction $record): ?string {
-                        $categories = $record->categories
-                            ->pluck('name')
-                            ->unique()
-                            ->filter()
-                            ->join(', ');
-
-                        return $categories !== '' ? $categories : null;
+                        return $record->category?->name;
                     })
                     ->placeholder('—')
                     ->limit(30)
@@ -142,17 +136,22 @@ final class LedgerTransactionsTable
                 SelectFilter::make('category_id')
                     ->label('Categoría')
                     ->multiple()
-                    ->relationship(
-                        name: 'categories',
-                        titleAttribute: 'name',
-                        modifyQueryUsing: static function (Builder $query): Builder {
-                            $userId = Auth::id() ?? 0;
+                    ->options(static function (): array {
+                        $userId = Auth::id() ?? 0;
 
-                            return $query->where('user_id', $userId)
-                                ->where('is_archived', false)
-                                ->orderBy('name');
-                        },
-                    ),
+                        return \App\Models\Category::query()
+                            ->where('user_id', $userId)
+                            ->where('is_archived', false)
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->toArray();
+                    })
+                    ->query(static function (Builder $query, array $data): Builder {
+                        return $query->when(
+                            filled($data['values'] ?? null),
+                            static fn (Builder $query, array $values): Builder => $query->whereIn('category_id', $values),
+                        );
+                    }),
                 Filter::make('effective_at')
                     ->label('Fecha efectiva')
                     ->schema([
