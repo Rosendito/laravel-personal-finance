@@ -7,6 +7,7 @@ namespace App\Filament\Resources\LedgerTransactions\Widgets;
 use App\Data\AccountBalanceData;
 use App\Helpers\MoneyFormatter;
 use App\Services\Queries\AccountBalanceQueryService;
+use App\Services\Queries\NetWorthQueryService;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Collection;
@@ -17,6 +18,8 @@ final class AccountBalancesWidget extends StatsOverviewWidget
     protected int|string|array $columnSpan = 'full';
 
     protected static bool $isLazy = false;
+
+    protected int|array|null $columns = 4;
 
     /**
      * @return array<int, Stat>
@@ -29,6 +32,12 @@ final class AccountBalancesWidget extends StatsOverviewWidget
             return [];
         }
 
+        $currency = config('finance.currency.default', 'USD');
+
+        // Calculate net worth
+        $netWorth = app(NetWorthQueryService::class)->calculateForUser($user);
+        $netWorthStat = Stat::make('Patrimonio Neto', MoneyFormatter::format($netWorth, $currency));
+
         /** @var Collection<int, AccountBalanceData> $balances */
         $balances = app(AccountBalanceQueryService::class)
             ->totalsForUser($user)
@@ -36,11 +45,12 @@ final class AccountBalancesWidget extends StatsOverviewWidget
 
         if ($balances->isEmpty()) {
             return [
+                $netWorthStat,
                 Stat::make('Balances de cuentas', 'Sin datos'),
             ];
         }
 
-        return $balances
+        $accountStats = $balances
             ->map(
                 static fn (AccountBalanceData $balance): Stat => Stat::make(
                     $balance->name,
@@ -49,5 +59,10 @@ final class AccountBalancesWidget extends StatsOverviewWidget
             )
             ->values()
             ->all();
+
+        return [
+            // $netWorthStat,
+            ...$accountStats,
+        ];
     }
 }
