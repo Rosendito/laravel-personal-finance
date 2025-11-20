@@ -13,6 +13,8 @@ final class BudgetWidget extends StatsOverviewWidget
 {
     protected int|string|array $columnSpan = 'full';
 
+    protected int|array|null $columns = 4;
+
     /**
      * @return array<int, BudgetStat>
      */
@@ -50,6 +52,4 @@ final class BudgetWidget extends StatsOverviewWidget
             ->values()
             ->all();
     }
-
-    protected int|array|null $columns = 4;
 }

@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
-use App\Enums\CachedAggregateKey;
+use App\Actions\UpdateBudgetPeriodAggregatesAction;
 use App\Events\LedgerTransactionCreated;
 use App\Models\BudgetPeriod;
-use App\Services\Queries\BudgetPeriodSpentQueryService;
 
 final class UpdateBudgetPeriodAggregates
 {
     public function __construct(
-        private readonly BudgetPeriodSpentQueryService $spentQuery,
+        private readonly UpdateBudgetPeriodAggregatesAction $updateAggregatesAction,
     ) {}
 
     public function handle(LedgerTransactionCreated $event): void
@@ -26,20 +25,6 @@ final class UpdateBudgetPeriodAggregates
             return;
         }
 
-        $spent = $this->spentQuery->total($period);
-
-        $period->upsertCachedAggregate(
-            CachedAggregateKey::Spent,
-            [
-                'value_decimal' => $spent,
-                'value_int' => null,
-                'value_json' => null,
-            ],
-        );
-
-        // Refresh the aggregates relationship if it was loaded to ensure the cached value is up to date
-        if ($period->relationLoaded('aggregates')) {
-            $period->load('aggregates');
-        }
+        $this->updateAggregatesAction->execute($period);
     }
 }

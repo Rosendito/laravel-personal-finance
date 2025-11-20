@@ -14,7 +14,7 @@ final class BudgetPeriodSpentQueryService
     {
         $sum = DB::query()
             ->from('ledger_entries as e')
-            ->selectRaw('COALESCE(SUM(e.amount), 0) as total')
+            ->selectRaw('COALESCE(SUM(e.amount_base), 0) as total')
             ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
             ->join('categories as c', 'c.id', '=', 'e.category_id')
             ->where('t.budget_period_id', $period->id)
