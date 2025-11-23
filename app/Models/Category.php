@@ -48,7 +48,14 @@ final class Category extends Model
                     ->selectRaw('COALESCE(SUM(COALESCE(ledger_entries.amount_base, ledger_entries.amount)), 0)')
                     ->join('ledger_transactions', 'ledger_entries.transaction_id', '=', 'ledger_transactions.id')
                     ->join('ledger_accounts', 'ledger_entries.account_id', '=', 'ledger_accounts.id')
-                    ->whereColumn('ledger_transactions.category_id', 'categories.id')
+                    ->where(function ($q) {
+                        $q->whereColumn('ledger_transactions.category_id', 'categories.id')
+                            ->orWhereIn('ledger_transactions.category_id', function ($subQuery) {
+                                $subQuery->select('id')
+                                    ->from('categories as child_categories')
+                                    ->whereColumn('child_categories.parent_id', 'categories.id');
+                            });
+                    })
                     ->whereColumn('ledger_accounts.type', 'categories.type'),
             ]);
     }

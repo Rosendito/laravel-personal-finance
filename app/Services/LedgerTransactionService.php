@@ -36,7 +36,7 @@ final class LedgerTransactionService
         $this->assertEntryCount($entryCollection);
 
         $accounts = $this->loadAccounts($entryCollection);
-        $category = $this->loadCategory($transactionData);
+        $category = $this->loadCategoryFromData($transactionData);
 
         if ($category !== null) {
             $this->assertCategoryOwnership($category, $user);
@@ -93,6 +93,50 @@ final class LedgerTransactionService
         return $transaction;
     }
 
+    public function loadCategory(?int $categoryId): ?Category
+    {
+        if ($categoryId === null) {
+            return null;
+        }
+
+        $category = Category::query()->find($categoryId);
+
+        if ($category === null) {
+            throw LedgerIntegrityException::categoryNotFound($categoryId);
+        }
+
+        return $category;
+    }
+
+    public function determineBudgetPeriod(
+        ?Category $category,
+        CarbonInterface $effectiveAt
+    ): ?BudgetPeriod {
+        if ($category === null || $category->budget_id === null) {
+            return null;
+        }
+
+        $period = BudgetPeriod::query()
+            ->where('budget_id', $category->budget_id)
+            ->where('start_at', '<=', $effectiveAt->toDateString())
+            ->where('end_at', '>', $effectiveAt->toDateString())
+            ->orderByDesc('start_at')
+            ->first();
+
+        if ($period === null) {
+            throw LedgerIntegrityException::budgetPeriodNotFound($category->budget_id, $effectiveAt->toDateString());
+        }
+
+        return $period;
+    }
+
+    public function assertCategoryOwnership(?Category $category, User $user): void
+    {
+        if ($category !== null && $category->user_id !== $user->id) {
+            throw LedgerIntegrityException::categoryOwnershipMismatch();
+        }
+    }
+
     /**
      * @param  Collection<int, LedgerEntryData>  $entries
      */
@@ -137,19 +181,9 @@ final class LedgerTransactionService
             ->keyBy(fn (LedgerAccount $account): int => $account->id);
     }
 
-    private function loadCategory(LedgerTransactionData $transactionData): ?Category
+    private function loadCategoryFromData(LedgerTransactionData $transactionData): ?Category
     {
-        if ($transactionData->category_id === null) {
-            return null;
-        }
-
-        $category = Category::query()->find($transactionData->category_id);
-
-        if ($category === null) {
-            throw LedgerIntegrityException::categoryNotFound($transactionData->category_id);
-        }
-
-        return $category;
+        return $this->loadCategory($transactionData->category_id);
     }
 
     /**
@@ -261,28 +295,6 @@ final class LedgerTransactionService
         ];
     }
 
-    private function determineBudgetPeriod(
-        ?Category $category,
-        CarbonInterface $effectiveAt
-    ): ?BudgetPeriod {
-        if ($category === null || $category->budget_id === null) {
-            return null;
-        }
-
-        $period = BudgetPeriod::query()
-            ->where('budget_id', $category->budget_id)
-            ->where('start_at', '<=', $effectiveAt->toDateString())
-            ->where('end_at', '>', $effectiveAt->toDateString())
-            ->orderByDesc('start_at')
-            ->first();
-
-        if ($period === null) {
-            throw LedgerIntegrityException::budgetPeriodNotFound($category->budget_id, $effectiveAt->toDateString());
-        }
-
-        return $period;
-    }
-
     private function buildTransactionAttributes(
         LedgerTransactionData $transactionData,
         User $user,
@@ -351,13 +363,6 @@ final class LedgerTransactionService
     {
         if ($account->user_id !== $user->id) {
             throw LedgerIntegrityException::accountOwnershipMismatch();
-        }
-    }
-
-    private function assertCategoryOwnership(?Category $category, User $user): void
-    {
-        if ($category !== null && $category->user_id !== $user->id) {
-            throw LedgerIntegrityException::categoryOwnershipMismatch();
         }
     }
 
