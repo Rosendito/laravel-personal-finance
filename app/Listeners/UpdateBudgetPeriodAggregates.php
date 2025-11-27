@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
-use App\Actions\UpdateBudgetPeriodAggregatesAction;
-use App\Events\LedgerTransactionCreated;
+use App\Models\Budget;
 use App\Models\BudgetPeriod;
+use App\Events\LedgerTransactionCreated;
+use App\Events\LedgerTransactionUpdated;
+use App\Actions\UpdateBudgetPeriodAggregatesAction;
 
 final class UpdateBudgetPeriodAggregates
 {
@@ -14,17 +16,15 @@ final class UpdateBudgetPeriodAggregates
         private readonly UpdateBudgetPeriodAggregatesAction $updateAggregatesAction,
     ) {}
 
-    public function handle(LedgerTransactionCreated $event): void
+    public function handle(LedgerTransactionCreated|LedgerTransactionUpdated $event): void
     {
-        $transaction = $event->transaction->loadMissing('budgetPeriod');
+        // Update all budget periods from an user
+        $budgets = Budget::query()->whereBelongsTo($event->transaction->user)
+            ->with('currentPeriod')
+            ->get();
 
-        /** @var BudgetPeriod|null $period */
-        $period = $transaction->budgetPeriod;
-
-        if ($period === null) {
-            return;
+        foreach ($budgets as $budget) {
+            $this->updateAggregatesAction->execute($budget->currentPeriod);
         }
-
-        $this->updateAggregatesAction->execute($period);
     }
 }
