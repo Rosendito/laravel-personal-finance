@@ -16,7 +16,7 @@ final class CompareBcvBinanceFromCommands extends Command
      *
      * @var string
      */
-    protected $signature = 'tests:compare-bcv-binance-from-commands';
+    protected $signature = 'tests:compare-bcv-binance-from-commands {--trans-amount=10000}';
 
     /**
      * The console command description.
@@ -36,27 +36,30 @@ final class CompareBcvBinanceFromCommands extends Command
 
         try {
             $bcvRateData = $fetchBcvRateAction->execute();
-            $binanceRateData = $fetchUsdtVesRateAction->execute();
+            $binanceRateData = $fetchUsdtVesRateAction->execute(transAmount: $this->option('trans-amount'));
 
             $bcvRate = $bcvRateData->averagePrice;
-            $binanceAverage = $binanceRateData->averagePrice;
+            $binanceMaxPrice = $binanceRateData->maxPrice;
 
-            if ($binanceAverage <= 0.0) {
-                $this->error('Invalid Binance P2P average: '.$binanceAverage);
+            if ($binanceMaxPrice <= 0.0) {
+                $this->error('Invalid Binance P2P max price: '.$binanceMaxPrice);
 
                 return self::FAILURE;
             }
 
-            $percentage = ($bcvRate / $binanceAverage) * 100;
+            $percentage = ($bcvRate / $binanceMaxPrice) * 100;
 
             $this->line('');
             $this->info('--- Parsed values ---');
             $this->info('BCV rate: '.number_format($bcvRate, 3, '.', '').' VES per USD');
-            $this->info('Binance P2P average: '.number_format($binanceAverage, 3, '.', '').' VES per USDT');
+            $this->info('Binance P2P max price: '.number_format($binanceMaxPrice, 3, '.', '').' VES per USDT');
+            $this->info('Binance P2P min price: '.number_format($binanceRateData->minPrice, 3, '.', '').' VES per USDT');
+            $this->info('Binance P2P average: '.number_format($binanceRateData->averagePrice, 3, '.', '').' VES per USDT');
+            $this->info('Binance P2P count: '.$binanceRateData->count.' ads');
 
             $this->line('');
             $this->info('--- Comparison ---');
-            $this->info('BCV as % of P2P: '.number_format($percentage, 2, '.', '').'%');
+            $this->info('BCV as % of P2P (max): '.number_format($percentage, 2, '.', '').'%');
 
             return self::SUCCESS;
         } catch (Throwable $exception) {

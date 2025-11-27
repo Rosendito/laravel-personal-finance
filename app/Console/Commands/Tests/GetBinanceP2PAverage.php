@@ -35,6 +35,9 @@ final class GetBinanceP2PAverage extends Command
             $exchangeRateData = $fetchUsdtVesRateAction->execute();
 
             $this->info('Prices found: '.implode(', ', $exchangeRateData->prices));
+            $this->info('Count: '.$exchangeRateData->count.' ads');
+            $this->info('Min price: '.number_format($exchangeRateData->minPrice, 3, '.', '').' VES per USDT');
+            $this->info('Max price: '.number_format($exchangeRateData->maxPrice, 3, '.', '').' VES per USDT');
             $this->info('Average price: '.number_format($exchangeRateData->averagePrice, 3, '.', '').' VES per USDT');
 
             return self::SUCCESS;

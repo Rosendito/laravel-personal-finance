@@ -67,10 +67,16 @@ final class FetchBinanceRateAction
         }
 
         $average = array_sum($prices) / count($prices);
+        $maxPrice = max($prices);
+        $minPrice = min($prices);
+        $count = count($prices);
 
         return new ExchangeRateData(
             averagePrice: $average,
             prices: $prices,
+            maxPrice: $maxPrice,
+            minPrice: $minPrice,
+            count: $count,
         );
     }
 }

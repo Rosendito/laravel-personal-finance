@@ -46,6 +46,9 @@ final class FetchBcvRateAction
         return new ExchangeRateData(
             averagePrice: $rate,
             prices: [$rate],
+            maxPrice: $rate,
+            minPrice: $rate,
+            count: 1,
         );
     }
 }
