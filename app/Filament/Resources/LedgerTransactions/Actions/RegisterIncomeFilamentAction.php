@@ -39,7 +39,7 @@ final class RegisterIncomeFilamentAction
 
                         $account = LedgerAccount::query()
                             ->where('user_id', $userId)
-                            ->where('type', LedgerAccountType::Asset)
+                            ->where('type', LedgerAccountType::ASSET)
                             ->where('is_archived', false)
                             ->withMostIncomeTransactions()
                             ->first();

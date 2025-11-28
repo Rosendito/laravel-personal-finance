@@ -29,7 +29,7 @@ describe('LedgerAccount Deletion', function (): void {
 
         $account = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'USD'])
             ->create();
 
@@ -54,7 +54,7 @@ describe('LedgerAccount Deletion', function (): void {
 
         $account = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'USD'])
             ->create();
 
@@ -69,7 +69,7 @@ describe('LedgerAccount Deletion', function (): void {
             ->for($user)
             ->state([
                 'name' => 'External Expenses (EUR)',
-                'type' => LedgerAccountType::Expense,
+                'type' => LedgerAccountType::EXPENSE,
                 'currency_code' => 'USD',
                 'is_fundamental' => true,
             ])

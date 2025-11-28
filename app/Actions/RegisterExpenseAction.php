@@ -36,7 +36,7 @@ final class RegisterExpenseAction
         $expenseSinkAccount = $this->resolveFundamentalAccount->execute(
             $user,
             $paymentAccount->currency_code,
-            LedgerAccountType::Expense,
+            LedgerAccountType::EXPENSE,
         );
 
         $transactionData = LedgerTransactionData::from([

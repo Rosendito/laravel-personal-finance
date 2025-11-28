@@ -38,19 +38,19 @@ describe(Category::class, function (): void {
 
         $assetAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => $currencyCode])
             ->create();
 
         $expenseAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Expense)
+            ->ofType(LedgerAccountType::EXPENSE)
             ->state(['currency_code' => $currencyCode])
             ->create();
 
         $incomeAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Income)
+            ->ofType(LedgerAccountType::INCOME)
             ->state(['currency_code' => $currencyCode])
             ->create();
 

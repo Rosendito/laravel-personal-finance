@@ -30,10 +30,10 @@ final class IncomeStatementQueryService
                         ELSE 0 END) AS net_income
                 SQL,
                 [
-                    LedgerAccountType::Income->value,
-                    LedgerAccountType::Expense->value,
-                    LedgerAccountType::Income->value,
-                    LedgerAccountType::Expense->value,
+                    LedgerAccountType::INCOME->value,
+                    LedgerAccountType::EXPENSE->value,
+                    LedgerAccountType::INCOME->value,
+                    LedgerAccountType::EXPENSE->value,
                 ]
             )
             ->first();

@@ -18,7 +18,7 @@ describe(RegisterIncomeAction::class, function (): void {
 
         $this->depositAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'USD'])
             ->create();
 
@@ -50,7 +50,7 @@ describe(RegisterIncomeAction::class, function (): void {
         $incomeAccount = LedgerAccount::query()
             ->where('user_id', $this->user->id)
             ->where('currency_code', 'USD')
-            ->where('type', LedgerAccountType::Income)
+            ->where('type', LedgerAccountType::INCOME)
             ->where('is_fundamental', true)
             ->firstOrFail();
 
@@ -74,7 +74,7 @@ describe(RegisterIncomeAction::class, function (): void {
 
         $foreignAccount = LedgerAccount::factory()
             ->for(User::factory()->create())
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'USD'])
             ->create();
 

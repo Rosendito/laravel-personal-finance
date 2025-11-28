@@ -23,7 +23,7 @@ describe(IncomeStatementQueryService::class, function (): void {
 
         $this->assetAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state([
                 'currency_code' => $this->currency->code,
             ])
@@ -31,7 +31,7 @@ describe(IncomeStatementQueryService::class, function (): void {
 
         $this->incomeAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Income)
+            ->ofType(LedgerAccountType::INCOME)
             ->state([
                 'currency_code' => $this->currency->code,
             ])
@@ -39,7 +39,7 @@ describe(IncomeStatementQueryService::class, function (): void {
 
         $this->expenseAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Expense)
+            ->ofType(LedgerAccountType::EXPENSE)
             ->state([
                 'currency_code' => $this->currency->code,
             ])

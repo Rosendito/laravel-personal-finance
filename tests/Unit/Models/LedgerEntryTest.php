@@ -29,7 +29,7 @@ describe(LedgerEntry::class, function (): void {
 
         $this->assetAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state([
                 'currency_code' => $this->currency->code,
                 'name' => 'Checking',
@@ -63,7 +63,7 @@ describe(LedgerEntry::class, function (): void {
 
         $foreignAccount = LedgerAccount::factory()
             ->for($otherUser)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state([
                 'currency_code' => $this->currency->code,
                 'name' => 'Foreign',

@@ -28,19 +28,19 @@ final class ListLedgerTransactions extends ListRecords
             'expense' => Tab::make('Gastos')
                 ->modifyQueryUsing(static function (Builder $query): Builder {
                     return $query->whereHas('entries.account', static function (Builder $q): Builder {
-                        return $q->where('type', LedgerAccountType::Expense);
+                        return $q->where('type', LedgerAccountType::EXPENSE);
                     });
                 }),
             'income' => Tab::make('Ingresos')
                 ->modifyQueryUsing(static function (Builder $query): Builder {
                     return $query->whereHas('entries.account', static function (Builder $q): Builder {
-                        return $q->where('type', LedgerAccountType::Income);
+                        return $q->where('type', LedgerAccountType::INCOME);
                     });
                 }),
             'transfer' => Tab::make('Transacciones')
                 ->modifyQueryUsing(static function (Builder $query): Builder {
                     return $query->whereDoesntHave('entries.account', static function (Builder $q): Builder {
-                        return $q->whereIn('type', [LedgerAccountType::Income, LedgerAccountType::Expense]);
+                        return $q->whereIn('type', [LedgerAccountType::INCOME, LedgerAccountType::EXPENSE]);
                     });
                 }),
             'all' => Tab::make('Todas'),

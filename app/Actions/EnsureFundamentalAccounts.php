@@ -15,11 +15,11 @@ final class EnsureFundamentalAccounts
         $accounts = [
             [
                 'name' => 'External Expenses',
-                'type' => LedgerAccountType::Expense,
+                'type' => LedgerAccountType::EXPENSE,
             ],
             [
                 'name' => 'External Income',
-                'type' => LedgerAccountType::Income,
+                'type' => LedgerAccountType::INCOME,
             ],
         ];
 

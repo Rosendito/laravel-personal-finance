@@ -19,7 +19,7 @@ describe(LedgerTransaction::class, function (): void {
 
         $assetAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state([
                 'currency_code' => $currency->code,
                 'name' => 'Test Asset',
@@ -28,7 +28,7 @@ describe(LedgerTransaction::class, function (): void {
 
         $incomeAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Income)
+            ->ofType(LedgerAccountType::INCOME)
             ->state([
                 'currency_code' => $currency->code,
                 'name' => 'Test Income',
@@ -77,7 +77,7 @@ describe(LedgerTransaction::class, function (): void {
 
         $usdAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state([
                 'currency_code' => $usd->code,
                 'name' => 'USD Wallet',
@@ -86,7 +86,7 @@ describe(LedgerTransaction::class, function (): void {
 
         $vesAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Expense)
+            ->ofType(LedgerAccountType::EXPENSE)
             ->state([
                 'currency_code' => $ves->code,
                 'name' => 'VES Expense',
@@ -137,7 +137,7 @@ describe(LedgerTransaction::class, function (): void {
 
         $assetAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state([
                 'currency_code' => $currency->code,
                 'name' => 'Cash',
@@ -146,7 +146,7 @@ describe(LedgerTransaction::class, function (): void {
 
         $expenseAccount = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Expense)
+            ->ofType(LedgerAccountType::EXPENSE)
             ->state([
                 'currency_code' => $currency->code,
                 'name' => 'Supplies',

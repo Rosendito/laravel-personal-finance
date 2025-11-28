@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\LedgerAccounts\Tables;
 
+use App\Enums\LedgerAccountSubType;
 use App\Enums\LedgerAccountType;
 use App\Helpers\MoneyFormatter;
 use App\Models\LedgerAccount;
@@ -31,22 +32,38 @@ final class LedgerAccountsTable
                     ->label('Tipo')
                     ->badge()
                     ->formatStateUsing(static fn (?LedgerAccountType $state): string => match ($state) {
-                        LedgerAccountType::Asset => 'Activo',
-                        LedgerAccountType::Liability => 'Pasivo',
-                        LedgerAccountType::Equity => 'Patrimonio',
-                        LedgerAccountType::Income => 'Ingreso',
-                        LedgerAccountType::Expense => 'Gasto',
+                        LedgerAccountType::ASSET => 'Activo',
+                        LedgerAccountType::LIABILITY => 'Pasivo',
+                        LedgerAccountType::EQUITY => 'Patrimonio',
+                        LedgerAccountType::INCOME => 'Ingreso',
+                        LedgerAccountType::EXPENSE => 'Gasto',
                         default => 'Desconocido',
                     })
                     ->color(static fn (?LedgerAccountType $state): string => match ($state) {
-                        LedgerAccountType::Asset => 'success',
-                        LedgerAccountType::Liability => 'danger',
-                        LedgerAccountType::Equity => 'info',
-                        LedgerAccountType::Income => 'success',
-                        LedgerAccountType::Expense => 'warning',
+                        LedgerAccountType::ASSET => 'success',
+                        LedgerAccountType::LIABILITY => 'danger',
+                        LedgerAccountType::EQUITY => 'info',
+                        LedgerAccountType::INCOME => 'success',
+                        LedgerAccountType::EXPENSE => 'warning',
                         default => 'gray',
                     })
                     ->sortable(),
+                TextColumn::make('subtype')
+                    ->label('Subtipo')
+                    ->badge()
+                    ->formatStateUsing(static fn (?LedgerAccountSubType $state): string => match ($state) {
+                        LedgerAccountSubType::CASH => 'Efectivo',
+                        LedgerAccountSubType::BANK => 'Banco',
+                        LedgerAccountSubType::WALLET => 'Billetera Digital',
+                        LedgerAccountSubType::LOAN_RECEIVABLE => 'Préstamo por Cobrar',
+                        LedgerAccountSubType::INVESTMENT => 'Inversión',
+                        LedgerAccountSubType::LOAN_PAYABLE => 'Préstamo por Pagar',
+                        LedgerAccountSubType::CREDIT_CARD => 'Tarjeta de Crédito',
+                        default => '-',
+                    })
+                    ->color('gray')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('balance')
                     ->label('Balance')
                     ->state(static fn (LedgerAccount $record): string => MoneyFormatter::format(
@@ -79,11 +96,22 @@ final class LedgerAccountsTable
                 SelectFilter::make('type')
                     ->label('Tipo')
                     ->options([
-                        LedgerAccountType::Asset->value => 'Activo',
-                        LedgerAccountType::Liability->value => 'Pasivo',
-                        LedgerAccountType::Equity->value => 'Patrimonio',
-                        LedgerAccountType::Income->value => 'Ingreso',
-                        LedgerAccountType::Expense->value => 'Gasto',
+                        LedgerAccountType::ASSET->value => 'Activo',
+                        LedgerAccountType::LIABILITY->value => 'Pasivo',
+                        LedgerAccountType::EQUITY->value => 'Patrimonio',
+                        LedgerAccountType::INCOME->value => 'Ingreso',
+                        LedgerAccountType::EXPENSE->value => 'Gasto',
+                    ]),
+                SelectFilter::make('subtype')
+                    ->label('Subtipo')
+                    ->options([
+                        LedgerAccountSubType::CASH->value => 'Efectivo',
+                        LedgerAccountSubType::BANK->value => 'Banco',
+                        LedgerAccountSubType::WALLET->value => 'Billetera Digital',
+                        LedgerAccountSubType::LOAN_RECEIVABLE->value => 'Préstamo por Cobrar',
+                        LedgerAccountSubType::INVESTMENT->value => 'Inversión',
+                        LedgerAccountSubType::LOAN_PAYABLE->value => 'Préstamo por Pagar',
+                        LedgerAccountSubType::CREDIT_CARD->value => 'Tarjeta de Crédito',
                     ]),
                 SelectFilter::make('currency_code')
                     ->label('Moneda')

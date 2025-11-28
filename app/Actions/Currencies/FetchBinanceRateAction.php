@@ -15,16 +15,31 @@ final class FetchBinanceRateAction
         int $rows,
         string $sellAsset,
         string $buyFiat,
-        string $tradeType = 'BUY',
+        string $tradeType = 'SELL',
+        array $payTypes = [], // ['Banesco']
     ): ExchangeRateData {
         $payload = [
+            'fiat' => $buyFiat,
             'page' => 1,
             'rows' => $rows,
-            'payTypes' => [],
-            'asset' => $sellAsset,
             'tradeType' => $tradeType,
-            'fiat' => $buyFiat,
-            'transAmount' => (string) $transAmount,
+            'asset' => $sellAsset,
+            'countries' => [],
+            'proMerchantAds' => false,
+            'shieldMerchantAds' => false,
+            'filterType' => 'tradable',
+            'periods' => [],
+            'additionalKycVerifyFilter' => 0,
+            'publisherType' => 'merchant',
+            'payTypes' => $payTypes,
+            'classifies' => [
+                'mass',
+                'profession',
+                'fiat_trade',
+            ],
+            'tradedWith' => false,
+            'followed' => false,
+            'transAmount' => $transAmount,
         ];
 
         $response = Http::withHeaders([

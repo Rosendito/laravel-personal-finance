@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\LedgerAccounts\Schemas;
 
+use App\Enums\LedgerAccountSubType;
 use App\Enums\LedgerAccountType;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -45,7 +46,18 @@ final class LedgerAccountForm
                             ->required()
                             ->native(false)
                             ->live()
-                            ->enum(LedgerAccountType::class),
+                            ->enum(LedgerAccountType::class)
+                            ->afterStateUpdated(static function ($state, callable $set): void {
+                                $set('subtype', null);
+                            }),
+                        Select::make('subtype')
+                            ->label('Subtipo')
+                            ->options(static fn (callable $get): array => self::subtypeOptions($get('type')))
+                            ->native(false)
+                            ->live()
+                            ->enum(LedgerAccountSubType::class)
+                            ->visible(static fn (callable $get): bool => self::hasSubtypes($get('type')))
+                            ->required(static fn (callable $get): bool => self::hasSubtypes($get('type'))),
                         Select::make('currency_code')
                             ->label('Moneda')
                             ->relationship(
@@ -77,14 +89,50 @@ final class LedgerAccountForm
 
         foreach (LedgerAccountType::cases() as $type) {
             $options[$type->value] = match ($type) {
-                LedgerAccountType::Asset => 'Activo',
-                LedgerAccountType::Liability => 'Pasivo',
-                LedgerAccountType::Equity => 'Patrimonio',
-                LedgerAccountType::Income => 'Ingreso',
-                LedgerAccountType::Expense => 'Gasto',
+                LedgerAccountType::ASSET => 'Activo',
+                LedgerAccountType::LIABILITY => 'Pasivo',
+                LedgerAccountType::EQUITY => 'Patrimonio',
+                LedgerAccountType::INCOME => 'Ingreso',
+                LedgerAccountType::EXPENSE => 'Gasto',
             };
         }
 
         return $options;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function subtypeOptions(?LedgerAccountType $type): array
+    {
+        if ($type === null) {
+            return [];
+        }
+
+        $subtypes = $type->subtypes();
+        $options = [];
+
+        foreach ($subtypes as $subtype) {
+            $options[$subtype->value] = match ($subtype) {
+                LedgerAccountSubType::CASH => 'Efectivo',
+                LedgerAccountSubType::BANK => 'Banco',
+                LedgerAccountSubType::WALLET => 'Billetera Digital',
+                LedgerAccountSubType::LOAN_RECEIVABLE => 'Préstamo por Cobrar',
+                LedgerAccountSubType::INVESTMENT => 'Inversión',
+                LedgerAccountSubType::LOAN_PAYABLE => 'Préstamo por Pagar',
+                LedgerAccountSubType::CREDIT_CARD => 'Tarjeta de Crédito',
+            };
+        }
+
+        return $options;
+    }
+
+    private static function hasSubtypes(?LedgerAccountType $type): bool
+    {
+        if ($type === null) {
+            return false;
+        }
+
+        return ! empty($type->subtypes());
     }
 }

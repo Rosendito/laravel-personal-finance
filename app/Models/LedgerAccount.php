@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\LedgerAccountSubType;
 use App\Enums\LedgerAccountType;
 use Database\Factories\LedgerAccountFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,12 +45,12 @@ final class LedgerAccount extends Model
 
     public function scopeWithMostIncomeTransactions(Builder $query): Builder
     {
-        return self::withMostTransactionsByAccountType($query, LedgerAccountType::Income, 'income_transactions_count');
+        return self::withMostTransactionsByAccountType($query, LedgerAccountType::INCOME, 'income_transactions_count');
     }
 
     public function scopeWithMostExpenseTransactions(Builder $query): Builder
     {
-        return self::withMostTransactionsByAccountType($query, LedgerAccountType::Expense, 'expense_transactions_count');
+        return self::withMostTransactionsByAccountType($query, LedgerAccountType::EXPENSE, 'expense_transactions_count');
     }
 
     public function scopeWithBalance(Builder $query): Builder
@@ -70,6 +71,7 @@ final class LedgerAccount extends Model
             'user_id' => 'integer',
             'name' => 'string',
             'type' => LedgerAccountType::class,
+            'subtype' => LedgerAccountSubType::class,
             'currency_code' => 'string',
             'is_archived' => 'boolean',
             'is_fundamental' => 'boolean',

@@ -18,7 +18,7 @@ describe(RegisterExpenseAction::class, function (): void {
 
         $this->paymentAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'USD'])
             ->create();
 
@@ -56,7 +56,7 @@ describe(RegisterExpenseAction::class, function (): void {
         $expenseAccount = LedgerAccount::query()
             ->where('user_id', $this->user->id)
             ->where('currency_code', 'USD')
-            ->where('type', LedgerAccountType::Expense)
+            ->where('type', LedgerAccountType::EXPENSE)
             ->where('is_fundamental', true)
             ->firstOrFail();
 
@@ -79,7 +79,7 @@ describe(RegisterExpenseAction::class, function (): void {
 
         $foreignAccount = LedgerAccount::factory()
             ->for(User::factory()->create())
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'USD'])
             ->create();
 

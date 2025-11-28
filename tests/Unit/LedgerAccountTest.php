@@ -26,19 +26,19 @@ describe(LedgerAccount::class, function (): void {
         // 3. Action: Create a new Asset Account in EUR
         LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'EUR'])
             ->create();
 
         // 4. Assert: Fundamental EUR accounts should have been created automatically by the Observer
         $eurExpenses = LedgerAccount::where('user_id', $user->id)
             ->where('currency_code', 'EUR')
-            ->where('type', LedgerAccountType::Expense)
+            ->where('type', LedgerAccountType::EXPENSE)
             ->first();
 
         $eurIncome = LedgerAccount::where('user_id', $user->id)
             ->where('currency_code', 'EUR')
-            ->where('type', LedgerAccountType::Income)
+            ->where('type', LedgerAccountType::INCOME)
             ->first();
 
         expect($eurExpenses)->not->toBeNull()
@@ -57,7 +57,7 @@ describe(LedgerAccount::class, function (): void {
         // Create an asset account in USD -> Should trigger observer, but find existing accounts
         LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'USD'])
             ->create();
 

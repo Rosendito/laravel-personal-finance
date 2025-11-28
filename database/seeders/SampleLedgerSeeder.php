@@ -33,10 +33,10 @@ final class SampleLedgerSeeder extends Seeder
             'email' => 'demo@example.com',
         ]);
 
-        $checkingAccount = $this->createAccount($user, LedgerAccountType::Asset, 'Checking Account', $usd->code);
-        $creditCardAccount = $this->createAccount($user, LedgerAccountType::Liability, 'Credit Card', $usd->code);
-        $incomeAccount = $this->createAccount($user, LedgerAccountType::Income, 'Salary Income', $usd->code);
-        $expenseAccount = $this->createAccount($user, LedgerAccountType::Expense, 'Household Expenses', $usd->code);
+        $checkingAccount = $this->createAccount($user, LedgerAccountType::ASSET, 'Checking Account', $usd->code);
+        $creditCardAccount = $this->createAccount($user, LedgerAccountType::LIABILITY, 'Credit Card', $usd->code);
+        $incomeAccount = $this->createAccount($user, LedgerAccountType::INCOME, 'Salary Income', $usd->code);
+        $expenseAccount = $this->createAccount($user, LedgerAccountType::EXPENSE, 'Household Expenses', $usd->code);
 
         $salaryCategory = $this->createCategory($user, CategoryType::Income, 'Salary');
         $groceriesCategory = $this->createCategory($user, CategoryType::Expense, 'Groceries');

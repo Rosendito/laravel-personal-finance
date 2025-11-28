@@ -27,7 +27,7 @@ final class RegisterIncomeAction
         $incomeSourceAccount = $this->resolveFundamentalAccount->execute(
             $user,
             $depositAccount->currency_code,
-            LedgerAccountType::Income,
+            LedgerAccountType::INCOME,
         );
 
         $amount = $this->formatAmount($data->amount);

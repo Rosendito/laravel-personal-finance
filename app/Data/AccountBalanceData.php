@@ -6,6 +6,7 @@ namespace App\Data;
 
 use Spatie\LaravelData\Attributes\Validation\BooleanType;
 use Spatie\LaravelData\Attributes\Validation\IntegerType;
+use Spatie\LaravelData\Attributes\Validation\Nullable;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\Size;
@@ -31,5 +32,8 @@ final class AccountBalanceData extends Data
 
         #[Required, BooleanType]
         public bool $is_fundamental,
+
+        #[Nullable, StringType]
+        public ?string $subtype = null,
     ) {}
 }

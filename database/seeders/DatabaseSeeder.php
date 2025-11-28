@@ -26,7 +26,7 @@ final class DatabaseSeeder extends Seeder
         LedgerAccount::factory()->for($user)->create([
             'user_id' => $user->id,
             'name' => 'Binance USDT',
-            'type' => LedgerAccountType::Asset,
+            'type' => LedgerAccountType::ASSET,
             'currency_code' => $currency->code,
         ]);
 

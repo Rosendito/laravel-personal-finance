@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\LedgerTransactions\Widgets;
 
 use App\Data\AccountBalanceData;
+use App\Enums\LedgerAccountSubType;
 use App\Helpers\MoneyFormatter;
 use App\Services\Queries\AccountBalanceQueryService;
 use App\Services\Queries\NetWorthQueryService;
@@ -38,10 +39,25 @@ final class AccountBalancesWidget extends StatsOverviewWidget
         $netWorth = app(NetWorthQueryService::class)->calculateForUser($user);
         $netWorthStat = Stat::make('Patrimonio Neto', MoneyFormatter::format($netWorth, $currency));
 
+        $liquidSubtypes = array_map(
+            static fn (LedgerAccountSubType $subtype): string => $subtype->value,
+            LedgerAccountSubType::liquidSubtypes()
+        );
+
         /** @var Collection<int, AccountBalanceData> $balances */
         $balances = app(AccountBalanceQueryService::class)
             ->totalsForUser($user)
-            ->filter(static fn (AccountBalanceData $balance): bool => $balance->is_fundamental === false);
+            ->filter(static function (AccountBalanceData $balance) use ($liquidSubtypes): bool {
+                if ($balance->is_fundamental === true) {
+                    return false;
+                }
+
+                if ($balance->subtype === null) {
+                    return false;
+                }
+
+                return in_array($balance->subtype, $liquidSubtypes, true);
+            });
 
         if ($balances->isEmpty()) {
             return [

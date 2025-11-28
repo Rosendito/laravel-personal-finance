@@ -16,20 +16,20 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
         // Create a new account in EUR
         $account = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'EUR'])
             ->create();
 
         // Verify fundamental accounts were created
         $expenseAccount = LedgerAccount::where('user_id', $user->id)
             ->where('currency_code', 'EUR')
-            ->where('type', LedgerAccountType::Expense)
+            ->where('type', LedgerAccountType::EXPENSE)
             ->where('name', 'External Expenses (EUR)')
             ->first();
 
         $incomeAccount = LedgerAccount::where('user_id', $user->id)
             ->where('currency_code', 'EUR')
-            ->where('type', LedgerAccountType::Income)
+            ->where('type', LedgerAccountType::INCOME)
             ->where('name', 'External Income (EUR)')
             ->first();
 
@@ -46,7 +46,7 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
         // Create account in EUR
         $account = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'EUR'])
             ->create();
 
@@ -57,13 +57,13 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
         // Verify fundamental accounts were created for GBP
         $expenseAccount = LedgerAccount::where('user_id', $user->id)
             ->where('currency_code', 'GBP')
-            ->where('type', LedgerAccountType::Expense)
+            ->where('type', LedgerAccountType::EXPENSE)
             ->where('name', 'External Expenses (GBP)')
             ->first();
 
         $incomeAccount = LedgerAccount::where('user_id', $user->id)
             ->where('currency_code', 'GBP')
-            ->where('type', LedgerAccountType::Income)
+            ->where('type', LedgerAccountType::INCOME)
             ->where('name', 'External Income (GBP)')
             ->first();
 
@@ -77,7 +77,7 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
 
         $account = LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'EUR'])
             ->create();
 
@@ -113,7 +113,7 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
         // Create a new account - should trigger listener but not create duplicates
         LedgerAccount::factory()
             ->for($user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'EUR'])
             ->create();
 

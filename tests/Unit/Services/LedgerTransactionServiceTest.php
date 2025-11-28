@@ -27,7 +27,7 @@ describe(LedgerTransactionService::class, function (): void {
 
         $this->assetAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state([
                 'currency_code' => $this->currency->code,
                 'name' => 'Cash',
@@ -36,7 +36,7 @@ describe(LedgerTransactionService::class, function (): void {
 
         $this->incomeAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Income)
+            ->ofType(LedgerAccountType::INCOME)
             ->state([
                 'currency_code' => $this->currency->code,
                 'name' => 'Salary',
@@ -126,7 +126,7 @@ describe(LedgerTransactionService::class, function (): void {
 
         $foreignAccount = LedgerAccount::factory()
             ->for(User::factory()->create())
-            ->ofType(LedgerAccountType::Expense)
+            ->ofType(LedgerAccountType::EXPENSE)
             ->state([
                 'currency_code' => $this->currency->code,
                 'name' => 'Other',
@@ -308,7 +308,7 @@ describe(LedgerTransactionService::class, function (): void {
 
         $eurAccount = LedgerAccount::factory()
             ->for($this->user)
-            ->ofType(LedgerAccountType::Asset)
+            ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'EUR'])
             ->create();
 

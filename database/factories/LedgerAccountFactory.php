@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\LedgerAccountSubType;
 use App\Enums\LedgerAccountType;
 use App\Models\Currency;
 use App\Models\LedgerAccount;
@@ -22,10 +23,15 @@ final class LedgerAccountFactory extends Factory
      */
     public function definition(): array
     {
+        $type = fake()->randomElement(LedgerAccountType::cases());
+        $subtypes = $type->subtypes();
+        $subtype = ! empty($subtypes) ? fake()->randomElement($subtypes) : null;
+
         return [
             'user_id' => User::factory(),
             'name' => sprintf('%s Account', fake()->company()),
-            'type' => fake()->randomElement(array_map(static fn (LedgerAccountType $type): string => $type->value, LedgerAccountType::cases())),
+            'type' => $type->value,
+            'subtype' => $subtype?->value,
             'currency_code' => Currency::factory(),
             'is_archived' => false,
         ];
@@ -35,6 +41,15 @@ final class LedgerAccountFactory extends Factory
     {
         return $this->state(fn (): array => [
             'type' => $type->value,
+            'subtype' => null,
+        ]);
+    }
+
+    public function withSubtype(LedgerAccountSubType $subtype): self
+    {
+        return $this->state(fn (): array => [
+            'type' => $subtype->type()->value,
+            'subtype' => $subtype->value,
         ]);
     }
 }

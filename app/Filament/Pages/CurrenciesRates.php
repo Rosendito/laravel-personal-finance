@@ -41,7 +41,7 @@ final class CurrenciesRates extends Page
         }
 
         try {
-            $binanceData = app(FetchUsdtVesRateAction::class)->execute(transAmount: $this->transAmount);
+            $binanceData = app(FetchUsdtVesRateAction::class)->execute(transAmount: $this->transAmount, rows: 20);
         } catch (Throwable $e) {
             return [
                 'bcv' => $bcvData,

@@ -23,7 +23,7 @@ final class NetWorthQueryService
             ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
             ->where('t.user_id', $user->id)
             ->where('a.is_archived', false)
-            ->whereIn('a.type', [LedgerAccountType::Asset->value, LedgerAccountType::Equity->value])
+            ->whereIn('a.type', [LedgerAccountType::ASSET->value, LedgerAccountType::EQUITY->value])
             ->selectRaw('COALESCE(SUM(COALESCE(e.amount_base, e.amount)), 0) as total')
             ->value('total') ?? '0';
 
@@ -34,7 +34,7 @@ final class NetWorthQueryService
             ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
             ->where('t.user_id', $user->id)
             ->where('a.is_archived', false)
-            ->where('a.type', LedgerAccountType::Liability->value)
+            ->where('a.type', LedgerAccountType::LIABILITY->value)
             ->selectRaw('COALESCE(SUM(COALESCE(e.amount_base, e.amount)), 0) as total')
             ->value('total') ?? '0';
 

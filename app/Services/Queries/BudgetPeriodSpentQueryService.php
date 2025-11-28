@@ -32,7 +32,7 @@ final class BudgetPeriodSpentQueryService
             ->join('ledger_accounts as a', 'a.id', '=', 'e.account_id')
             ->whereIn('t.category_id', $categoryIds)
             ->whereBetween('t.effective_at', [$period->start_at, $period->end_at])
-            ->where('a.type', LedgerAccountType::Expense->value)
+            ->where('a.type', LedgerAccountType::EXPENSE->value)
             ->value('total');
 
         return bcadd((string) ($sum ?? '0'), '0', 6);
