@@ -61,7 +61,7 @@ Crear 4 acciones de negocio en `app/Actions/Debts`:
 
 ---
 
-### Tarea 2: Fundamentos de UI (Página, Tabla y Widgets)
+### Tarea 2: Fundamentos de UI (Página, Tabla y Widgets) ✅
 
 Configurar la página de Filament y los widgets visuales. No implementar la lógica de los botones de acción todavía, solo la visualización.
 

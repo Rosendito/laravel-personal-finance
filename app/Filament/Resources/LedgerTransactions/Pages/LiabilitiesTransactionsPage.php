@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Filament\Resources\LedgerTransactions\Pages;
 
 use App\Enums\LedgerAccountSubType;
+use App\Filament\Resources\LedgerTransactions\Actions\RegisterBorrowingFilamentAction;
+use App\Filament\Resources\LedgerTransactions\Actions\RegisterLendingFilamentAction;
 use App\Filament\Resources\LedgerTransactions\LedgerTransactionResource;
 use App\Filament\Resources\LedgerTransactions\Tables\LiabilitiesTransactionsTable;
 use App\Filament\Resources\LedgerTransactions\Widgets\DebtLoanBalancesWidget;
-use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,13 +31,8 @@ final class LiabilitiesTransactionsPage extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('register_debt')
-                ->label('Registrar Deuda')
-                ->color('danger'),
-
-            Action::make('register_loan')
-                ->label('Prestar Dinero')
-                ->color('warning'),
+            RegisterBorrowingFilamentAction::make(),
+            RegisterLendingFilamentAction::make(),
         ];
     }
 

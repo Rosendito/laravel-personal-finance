@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Concerns;
 
+use App\Enums\LedgerAccountSubType;
 use App\Enums\LedgerAccountType;
 use App\Helpers\MoneyFormatter;
 use App\Models\LedgerAccount;
@@ -59,6 +60,43 @@ trait HasTransactionFormComponents
     }
 
     /**
+     * Get account options filtered by subtype with balance formatted as HTML.
+     *
+     * @return array<int, string>
+     */
+    protected static function getAccountOptionsBySubtype(LedgerAccountSubType $subtype, ?int $excludeAccountId = null): array
+    {
+        $userId = Auth::id() ?? 0;
+
+        $query = LedgerAccount::query()
+            ->where('user_id', $userId)
+            ->where('subtype', $subtype)
+            ->where('is_archived', false)
+            ->withBalance();
+
+        if ($excludeAccountId !== null) {
+            $query->where('id', '!=', $excludeAccountId);
+        }
+
+        return $query->get()
+            ->mapWithKeys(static function (LedgerAccount $account): array {
+                $formattedBalance = MoneyFormatter::format(
+                    $account->balance ?? 0,
+                    $account->currency_code ?? '',
+                );
+
+                $html = sprintf(
+                    '<div><strong>%s</strong><br><span class="text-sm text-gray-500 dark:text-gray-400">%s</span></div>',
+                    htmlspecialchars($account->name, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($formattedBalance, ENT_QUOTES, 'UTF-8'),
+                );
+
+                return [$account->id => $html];
+            })
+            ->toArray();
+    }
+
+    /**
      * Create account select field.
      */
     protected static function accountSelectField(
@@ -68,7 +106,7 @@ trait HasTransactionFormComponents
     ): Select {
         return Select::make($name)
             ->label($label)
-            ->options(static fn (): array => static::getAccountOptions())
+            ->options(static fn(): array => static::getAccountOptions())
             ->default($defaultCallback)
             ->searchable()
             ->preload()
@@ -148,45 +186,7 @@ trait HasTransactionFormComponents
         string $label = 'Monto',
         string $fromAccountFieldName = 'from_account_id',
     ): TextInput {
-        return TextInput::make($name)
-            ->label($label)
-            ->numeric()
-            ->required()
-            ->minValue(0.01)
-            ->step(0.01)
-            ->live()
-            ->rules([
-                function (Get $get) use ($fromAccountFieldName) {
-                    return function (string $attribute, $value, Closure $fail) use ($get, $fromAccountFieldName): void {
-                        $accountId = $get($fromAccountFieldName);
-
-                        if (! $accountId) {
-                            return;
-                        }
-
-                        $account = LedgerAccount::query()
-                            ->where('id', $accountId)
-                            ->withBalance()
-                            ->first();
-
-                        if (! $account) {
-                            return;
-                        }
-
-                        $balance = $account->balance ?? 0;
-                        $amount = (float) $value;
-
-                        if ($amount > $balance) {
-                            $formattedBalance = MoneyFormatter::format($balance, $account->currency_code ?? '');
-
-                            $fail(sprintf(
-                                'El monto no puede ser mayor al balance disponible en la cuenta origen (%s).',
-                                $formattedBalance,
-                            ));
-                        }
-                    };
-                },
-            ]);
+        return self::amountInputFieldWithBalanceValidation($name, $label, $fromAccountFieldName);
     }
 
     /**
@@ -278,6 +278,57 @@ trait HasTransactionFormComponents
 
                 return $fromAccount->currency_code !== $defaultCurrency
                     && $toAccount->currency_code !== $defaultCurrency;
+            });
+    }
+
+    /**
+     * Create exchange rate input field for debt/loan transactions (two accounts).
+     */
+    protected static function exchangeRateInputFieldForDebtLoan(
+        string $targetAccountFieldName = 'target_account_id',
+        string $contraAccountFieldName = 'contra_account_id',
+    ): TextInput {
+        return TextInput::make('exchange_rate')
+            ->label(sprintf('Tasa de cambio (%s)', config('finance.currency.default')))
+            ->numeric()
+            ->minValue(0.000001)
+            ->visible(function (Get $get) use ($targetAccountFieldName, $contraAccountFieldName): bool {
+                $targetId = $get($targetAccountFieldName);
+                $contraId = $get($contraAccountFieldName);
+
+                if (! $targetId || ! $contraId) {
+                    return false;
+                }
+
+                $defaultCurrency = config('finance.currency.default');
+                $targetAccount = LedgerAccount::find($targetId);
+                $contraAccount = LedgerAccount::find($contraId);
+
+                if (! $targetAccount || ! $contraAccount) {
+                    return false;
+                }
+
+                return $targetAccount->currency_code !== $defaultCurrency
+                    && $contraAccount->currency_code !== $defaultCurrency;
+            })
+            ->required(function (Get $get) use ($targetAccountFieldName, $contraAccountFieldName): bool {
+                $targetId = $get($targetAccountFieldName);
+                $contraId = $get($contraAccountFieldName);
+
+                if (! $targetId || ! $contraId) {
+                    return false;
+                }
+
+                $defaultCurrency = config('finance.currency.default');
+                $targetAccount = LedgerAccount::find($targetId);
+                $contraAccount = LedgerAccount::find($contraId);
+
+                if (! $targetAccount || ! $contraAccount) {
+                    return false;
+                }
+
+                return $targetAccount->currency_code !== $defaultCurrency
+                    && $contraAccount->currency_code !== $defaultCurrency;
             });
     }
 
