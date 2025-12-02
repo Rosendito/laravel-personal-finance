@@ -10,18 +10,38 @@ use App\Filament\Resources\LedgerTransactions\Actions\CollectLoanFilamentAction;
 use App\Filament\Resources\LedgerTransactions\Actions\PayDebtFilamentAction;
 use App\Helpers\MoneyFormatter;
 use App\Services\Queries\AccountBalanceQueryService;
+use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
-final class DebtLoanBalancesWidget extends StatsOverviewWidget
+final class DebtLoanBalancesWidget extends StatsOverviewWidget implements HasActions, HasForms
 {
+    use InteractsWithActions;
+    use InteractsWithForms;
+
+    protected string $view = 'filament.resources.ledger-transactions.widgets.debt-loan-balances-widget';
+
     protected int|string|array $columnSpan = 'full';
 
     protected static bool $isLazy = false;
 
     protected int|array|null $columns = 4;
+
+    public function collectLoan(): Action
+    {
+        return CollectLoanFilamentAction::make();
+    }
+
+    public function payDebt(): Action
+    {
+        return PayDebtFilamentAction::make();
+    }
 
     /**
      * @return array<int, Stat>
@@ -57,30 +77,27 @@ final class DebtLoanBalancesWidget extends StatsOverviewWidget
             });
 
         $receivables = $allBalances->filter(
-            static fn (AccountBalanceData $balance): bool => $balance->subtype === LedgerAccountSubType::LOAN_RECEIVABLE->value,
+            static fn(AccountBalanceData $balance): bool => $balance->subtype === LedgerAccountSubType::LOAN_RECEIVABLE->value,
         );
 
         $payables = $allBalances->filter(
-            static fn (AccountBalanceData $balance): bool => $balance->subtype === LedgerAccountSubType::LOAN_PAYABLE->value,
+            static fn(AccountBalanceData $balance): bool => $balance->subtype === LedgerAccountSubType::LOAN_PAYABLE->value,
         );
 
         $stats = [];
 
-        // Section: Por Cobrar (Receivables)
         if ($receivables->isNotEmpty()) {
             $receivablesStats = $receivables
                 ->map(
                     function (AccountBalanceData $balance): Stat {
-                        return Stat::make(
+                        return DebtLoanStat::make(
                             $balance->name,
                             MoneyFormatter::format($balance->balance, $balance->currency_code),
                         )
-                            ->description('Botón: Cobrar')
                             ->color('success')
                             ->icon('heroicon-m-arrow-down-circle')
-                            ->action(
-                                CollectLoanFilamentAction::make($balance->account_id)
-                            );
+                            ->accountId($balance->account_id)
+                            ->actionName('collectLoan');
                     },
                 )
                 ->values()
@@ -89,21 +106,18 @@ final class DebtLoanBalancesWidget extends StatsOverviewWidget
             $stats = [...$stats, ...$receivablesStats];
         }
 
-        // Section: Por Pagar (Payables)
         if ($payables->isNotEmpty()) {
             $payablesStats = $payables
                 ->map(
                     function (AccountBalanceData $balance): Stat {
-                        return Stat::make(
+                        return DebtLoanStat::make(
                             $balance->name,
                             MoneyFormatter::format($balance->balance, $balance->currency_code),
                         )
-                            ->description('Botón: Pagar')
                             ->color('danger')
                             ->icon('heroicon-m-arrow-up-circle')
-                            ->action(
-                                PayDebtFilamentAction::make($balance->account_id)
-                            );
+                            ->accountId($balance->account_id)
+                            ->actionName('payDebt');
                     },
                 )
                 ->values()

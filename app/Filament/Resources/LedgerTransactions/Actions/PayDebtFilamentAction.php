@@ -17,16 +17,19 @@ final class PayDebtFilamentAction
 {
     use HasTransactionFormComponents;
 
-    public static function make(int $accountId): Action
+    public static function make(?int $accountId = null): Action
     {
         return Action::make('payDebt')
             ->label('Pagar Deuda')
             ->icon('heroicon-o-arrow-up-circle')
             ->color('danger')
             ->modalHeading('Pagar Deuda')
+            ->fillForm(fn (array $arguments): array => [
+                'target_account_id' => $accountId ?? $arguments['accountId'] ?? null,
+                'effective_at' => Carbon::now()->toDateTimeString(),
+            ])
             ->schema([
                 \Filament\Forms\Components\Hidden::make('target_account_id')
-                    ->default($accountId)
                     ->required(),
                 self::accountSelectField(
                     name: 'contra_account_id',
@@ -43,7 +46,7 @@ final class PayDebtFilamentAction
                 self::effectiveAtDateTimePickerField(),
                 self::additionalInformationSection(),
             ])
-            ->action(function (array $data) use ($accountId): void {
+            ->action(function (array $data): void {
                 $user = Auth::user();
 
                 if ($user === null) {
@@ -56,7 +59,8 @@ final class PayDebtFilamentAction
                     return;
                 }
 
-                $targetAccount = LedgerAccount::find($accountId);
+                $targetAccountId = $data['target_account_id'];
+                $targetAccount = LedgerAccount::find($targetAccountId);
                 $contraAccount = LedgerAccount::find($data['contra_account_id']);
 
                 if ($targetAccount === null || $contraAccount === null) {
@@ -87,7 +91,7 @@ final class PayDebtFilamentAction
                 $registerDebtData = RegisterDebtData::from([
                     'description' => $data['description'],
                     'effective_at' => $effectiveAt,
-                    'target_account_id' => $accountId,
+                    'target_account_id' => $targetAccountId,
                     'contra_account_id' => $data['contra_account_id'],
                     'amount' => $data['amount'],
                     'exchange_rate' => $data['exchange_rate'] ?? null,
