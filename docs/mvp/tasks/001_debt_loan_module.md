@@ -22,7 +22,7 @@ Implementar un flujo completo en Filament que incluya:
 
 ## Plan de Ejecución (3 Tareas)
 
-### Tarea 1: Lógica de Negocio (Domain Actions & DTOs)
+### Tarea 1: Lógica de Negocio (Domain Actions & DTOs) ✅
 
 El objetivo es encapsular la lógica financiera en clases `Action` agnósticas del framework UI (Filament), usando DTOs para la transferencia de datos.
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\LedgerTransactions;
 
 use App\Filament\Resources\LedgerTransactions\Pages\EditLedgerTransaction;
+use App\Filament\Resources\LedgerTransactions\Pages\LiabilitiesTransactionsPage;
 use App\Filament\Resources\LedgerTransactions\Pages\ListLedgerTransactions;
 use App\Filament\Resources\LedgerTransactions\Pages\ViewLedgerTransaction;
 use App\Filament\Resources\LedgerTransactions\Schemas\LedgerTransactionForm;
@@ -12,12 +13,14 @@ use App\Filament\Resources\LedgerTransactions\Schemas\LedgerTransactionInfolist;
 use App\Filament\Resources\LedgerTransactions\Tables\LedgerTransactionsTable;
 use App\Models\LedgerTransaction;
 use BackedEnum;
+use Filament\Navigation\NavigationItem;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use UnitEnum;
 
 final class LedgerTransactionResource extends Resource
 {
@@ -29,7 +32,9 @@ final class LedgerTransactionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Transacciones';
 
-    protected static ?string $navigationLabel = 'Transacciones';
+    protected static ?string $navigationLabel = 'Ingresos y Gastos';
+
+    protected static UnitEnum|string|null $navigationGroup = 'Transacciones';
 
     protected static ?string $recordTitleAttribute = 'description';
 
@@ -48,6 +53,25 @@ final class LedgerTransactionResource extends Resource
         return LedgerTransactionsTable::configure($table);
     }
 
+    public static function getNavigationItems(): array
+    {
+        $routeBaseName = static::getRouteBaseName();
+
+        return [
+            NavigationItem::make(static::getNavigationLabel())
+                ->group(static::getNavigationGroup())
+                ->icon(static::getNavigationIcon())
+                ->isActiveWhen(fn() => request()->routeIs($routeBaseName . '.*') && ! request()->routeIs($routeBaseName . '.liabilities'))
+                ->url(static::getUrl('index')),
+
+            NavigationItem::make('Deudas y Préstamos')
+                ->icon('heroicon-o-banknotes')
+                ->group(static::getNavigationGroup())
+                ->isActiveWhen(fn() => request()->routeIs($routeBaseName . '.liabilities'))
+                ->url(static::getUrl('liabilities')),
+        ];
+    }
+
     /**
      * @return array<int, class-string>
      */
@@ -60,6 +84,7 @@ final class LedgerTransactionResource extends Resource
     {
         return [
             'index' => ListLedgerTransactions::route('/'),
+            'liabilities' => LiabilitiesTransactionsPage::route('/liabilities'),
             'edit' => EditLedgerTransaction::route('/{record}/edit'),
             'view' => ViewLedgerTransaction::route('/{record}'),
         ];

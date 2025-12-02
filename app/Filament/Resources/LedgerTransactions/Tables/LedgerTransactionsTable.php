@@ -38,100 +38,7 @@ final class LedgerTransactionsTable
                     ]),
             )
             ->defaultSort('effective_at', 'desc')
-            ->columns([
-                TextColumn::make('id')
-                    ->label('ID')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('description')
-                    ->label('Descripción')
-                    ->searchable()
-                    ->sortable()
-                    ->wrap()
-                    ->limit(50),
-                TextColumn::make('amount_summary')
-                    ->label('Monto')
-                    ->state(static function (LedgerTransaction $record): ?string {
-                        $amount = $record->amount_summary;
-                        $currency = $record->amount_currency;
-
-                        if ($amount === null) {
-                            return null;
-                        }
-
-                        return MoneyFormatter::format($amount, $currency ?? '');
-                    })
-                    ->placeholder('—')
-                    ->alignRight()
-                    ->sortable()
-                    ->toggleable(),
-                TextColumn::make('amount_base_summary')
-                    ->label('Monto base')
-                    ->state(static function (LedgerTransaction $record): ?string {
-                        $amount = $record->amount_base_summary;
-                        $defaultCurrency = config('finance.currency.default');
-
-                        if ($amount === null) {
-                            return null;
-                        }
-
-                        return MoneyFormatter::format($amount, $defaultCurrency);
-                    })
-                    ->placeholder('—')
-                    ->alignRight()
-                    ->sortable()
-                    ->toggleable(),
-                TextColumn::make('category_summary')
-                    ->label('Categoría')
-                    ->state(static function (LedgerTransaction $record): ?string {
-                        return $record->category?->name;
-                    })
-                    ->placeholder('—')
-                    ->limit(30)
-                    ->wrap()
-                    ->toggleable(isToggledHiddenByDefault: static fn (Page $livewire): bool => $livewire->activeTab === 'transfer'),
-                TextColumn::make('from_accounts')
-                    ->label('Desde')
-                    ->state(static fn (LedgerTransaction $record): ?string => self::summarizeAccounts($record, outgoing: true))
-                    ->placeholder('—')
-                    ->limit(30)
-                    ->wrap()
-                    ->toggleable()
-                    ->hidden(static fn (Page $livewire): bool => $livewire->activeTab === 'income'),
-                TextColumn::make('to_accounts')
-                    ->label('Hacia')
-                    ->state(static fn (LedgerTransaction $record): ?string => self::summarizeAccounts($record, outgoing: false))
-                    ->placeholder('—')
-                    ->limit(30)
-                    ->wrap()
-                    ->toggleable()
-                    ->hidden(static fn (Page $livewire): bool => ($livewire->activeTab ?? 'expense') === 'expense'),
-                TextColumn::make('effective_at')
-                    ->label('Fecha efectiva')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('posted_at')
-                    ->label('Fecha publicación')
-                    ->date()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('budgetPeriod.budget.name')
-                    ->label('Presupuesto')
-                    ->placeholder('—')
-                    ->sortable()
-                    ->toggleable()
-                    ->hidden(static fn (Page $livewire): bool => $livewire->activeTab !== 'expense'),
-                TextColumn::make('source')
-                    ->label('Origen')
-                    ->badge()
-                    ->placeholder('—')
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('created_at')
-                    ->label('Creada')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-            ])
+            ->columns(self::getColumns())
             ->filters([
                 SelectFilter::make('category_id')
                     ->label('Categoría')
@@ -203,6 +110,107 @@ final class LedgerTransactionsTable
                 EditLedgerTransactionFilamentAction::make(),
                 ViewAction::make(),
             ]);
+    }
+
+    /**
+     * @return array<int, TextColumn>
+     */
+    public static function getColumns(): array
+    {
+        return [
+            TextColumn::make('id')
+                ->label('ID')
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('description')
+                ->label('Descripción')
+                ->searchable()
+                ->sortable()
+                ->wrap()
+                ->limit(50),
+            TextColumn::make('amount_summary')
+                ->label('Monto')
+                ->state(static function (LedgerTransaction $record): ?string {
+                    $amount = $record->amount_summary;
+                    $currency = $record->amount_currency;
+
+                    if ($amount === null) {
+                        return null;
+                    }
+
+                    return MoneyFormatter::format($amount, $currency ?? '');
+                })
+                ->placeholder('—')
+                ->alignRight()
+                ->sortable()
+                ->toggleable(),
+            TextColumn::make('amount_base_summary')
+                ->label('Monto base')
+                ->state(static function (LedgerTransaction $record): ?string {
+                    $amount = $record->amount_base_summary;
+                    $defaultCurrency = config('finance.currency.default');
+
+                    if ($amount === null) {
+                        return null;
+                    }
+
+                    return MoneyFormatter::format($amount, $defaultCurrency);
+                })
+                ->placeholder('—')
+                ->alignRight()
+                ->sortable()
+                ->toggleable(),
+            TextColumn::make('category_summary')
+                ->label('Categoría')
+                ->state(static function (LedgerTransaction $record): ?string {
+                    return $record->category?->name;
+                })
+                ->placeholder('—')
+                ->limit(30)
+                ->wrap()
+                ->toggleable(isToggledHiddenByDefault: static fn (Page $livewire): bool => $livewire->activeTab === 'transfer'),
+            TextColumn::make('from_accounts')
+                ->label('Desde')
+                ->state(static fn (LedgerTransaction $record): ?string => self::summarizeAccounts($record, outgoing: true))
+                ->placeholder('—')
+                ->limit(30)
+                ->wrap()
+                ->toggleable()
+                ->hidden(static fn (Page $livewire): bool => $livewire->activeTab === 'income'),
+            TextColumn::make('to_accounts')
+                ->label('Hacia')
+                ->state(static fn (LedgerTransaction $record): ?string => self::summarizeAccounts($record, outgoing: false))
+                ->placeholder('—')
+                ->limit(30)
+                ->wrap()
+                ->toggleable()
+                ->hidden(static fn (Page $livewire): bool => ($livewire->activeTab ?? 'expense') === 'expense'),
+            TextColumn::make('effective_at')
+                ->label('Fecha efectiva')
+                ->dateTime()
+                ->sortable(),
+            TextColumn::make('posted_at')
+                ->label('Fecha publicación')
+                ->date()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('budgetPeriod.budget.name')
+                ->label('Presupuesto')
+                ->placeholder('—')
+                ->sortable()
+                ->toggleable()
+                ->hidden(static fn (Page $livewire): bool => $livewire->activeTab !== 'expense'),
+            TextColumn::make('source')
+                ->label('Origen')
+                ->badge()
+                ->placeholder('—')
+                ->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('created_at')
+                ->label('Creada')
+                ->dateTime()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+        ];
     }
 
     private static function summarizeAccounts(LedgerTransaction $record, bool $outgoing): ?string
