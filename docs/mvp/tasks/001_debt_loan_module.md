@@ -33,7 +33,7 @@ El objetivo es encapsular la lógica financiera en clases `Action` agnósticas d
 | **Pedir Prestado (Borrowing)**   | LIABILITY (Pasivo)<br>Sub: LOAN_PAYABLE | Liquid (Entra dinero a mi caja)           | Contraparte (Aumenta mi deuda)           | Activo (+)<br>Pasivo (+)      |
 | **Pagar Deuda (Repayment)**      | LIABILITY (Pasivo)<br>Sub: LOAN_PAYABLE | Contraparte (Disminuye mi deuda)          | Liquid (Sale dinero de mi caja)          | Activo (-)<br>Pasivo (-)      |
 | **Prestar Dinero (Lending)**     | ASSET (Activo)<br>Sub: LOAN_RECEIVABLE  | Contraparte (Aumenta mi derecho de cobro) | Liquid (Sale dinero de mi caja)          | Activo (+/-)<br>(Intercambio) |
-| **Cobrar Préstamo (Collection)** | ASSET (Activo)<br>Sub: LOAN_RECEIVABLE  | Liquid (Entra dinero recuperado)          | Contraparte (Disminuye derecho de cobro) | Activo (+/-)<br>(Intercambio) |
+| **Cobrar Préstamo (Collection)** | ASSET (Activo)<br>Sub: **LOAN_RECEIVABLE**  | Liquid (Entra dinero recuperado)          | Contraparte (Disminuye derecho de cobro) | Activo (+/-)<br>(Intercambio) |
 
 **Archivos de Referencia:**
 

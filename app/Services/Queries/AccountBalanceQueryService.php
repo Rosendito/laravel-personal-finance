@@ -24,7 +24,7 @@ final class AccountBalanceQueryService
             ->selectRaw('COALESCE(SUM(e.amount), 0) as balance')
             ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
             ->where('t.user_id', $user->id)
-            ->when($asOf, static fn (QueryBuilder $query, CarbonInterface $asOfDate): QueryBuilder => $query
+            ->when($asOf, static fn(QueryBuilder $query, CarbonInterface $asOfDate): QueryBuilder => $query
                 ->where('t.effective_at', '<=', $asOfDate))
             ->groupBy('e.account_id');
 
@@ -44,11 +44,11 @@ final class AccountBalanceQueryService
             ->get();
 
         return $rows->map(
-            static fn ($row): AccountBalanceData => new AccountBalanceData(
+            fn($row): AccountBalanceData => new AccountBalanceData(
                 account_id: (int) $row->id,
                 name: $row->name,
                 currency_code: $row->currency_code,
-                balance: bcadd((string) ($row->balance ?? '0'), '0', 6),
+                balance: bcadd($this->normalizeNumber($row->balance ?? '0'), '0', 6),
                 is_fundamental: (bool) $row->is_fundamental,
                 subtype: $row->subtype,
             )
@@ -62,6 +62,17 @@ final class AccountBalanceQueryService
             ->where('account_id', $accountId)
             ->sum('amount');
 
-        return bcadd((string) ($balance ?? '0'), '0', 6);
+        return bcadd($this->normalizeNumber($balance), '0', 6);
+    }
+
+    private function normalizeNumber(int|float|string|null $value): string
+    {
+        $numericString = is_string($value) ? mb_trim($value) : (string) ($value ?? '0');
+
+        if (is_numeric($numericString) && ! str_contains($numericString, 'e') && ! str_contains($numericString, 'E')) {
+            return $numericString;
+        }
+
+        return number_format((float) ($value ?? 0), 6, '.', '');
     }
 }
