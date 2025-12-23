@@ -1,0 +1,167 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Filament\Widgets;
+
+use App\Services\Queries\DashboardSpendingByCategoryQueryService;
+use Carbon\CarbonImmutable;
+use Filament\Support\Colors\Color;
+use Filament\Widgets\ChartWidget;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Facades\Auth;
+
+final class SpendingByCategoryChart extends ChartWidget
+{
+    use InteractsWithPageFilters;
+
+    protected ?string $heading = 'Gastos por categoría';
+
+    protected int|string|array $columnSpan = 1;
+
+    protected function getType(): string
+    {
+        return 'doughnut';
+    }
+
+    protected function getData(): array
+    {
+        $user = Auth::user();
+
+        if ($user === null) {
+            return [
+                'datasets' => [],
+                'labels' => [],
+            ];
+        }
+
+        [$start, $end] = $this->dateRange();
+
+        $totals = app(DashboardSpendingByCategoryQueryService::class)
+            ->totals($user, $start, $end);
+
+        if ($totals->isEmpty()) {
+            return [
+                'datasets' => [
+                    [
+                        'label' => 'Gastos',
+                        'data' => [0],
+                        'backgroundColor' => ['#e5e7eb'],
+                    ],
+                ],
+                'labels' => ['Sin datos'],
+            ];
+        }
+
+        $top = $totals->take(8);
+        $rest = $totals->skip(8);
+
+        if ($rest->isNotEmpty()) {
+            $restTotal = $rest->sum(static fn ($item) => (float) $item->total);
+            $top = $top->push(new \App\Data\Dashboard\CategoryTotalData(categoryId: null, name: 'Otros', total: $restTotal));
+        }
+
+        $labels = $top->map(static fn ($row) => $row->name)->all();
+        $data = $top->map(static fn ($row) => (float) $row->total)->all();
+        $colors = $this->resolveColors($top->all());
+
+        return [
+            'datasets' => [
+                [
+                    'label' => 'Gastos',
+                    'data' => $data,
+                    'backgroundColor' => $colors,
+                ],
+            ],
+            'labels' => $labels,
+        ];
+    }
+
+    /**
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    private function dateRange(): array
+    {
+        $start = $this->pageFilters['start_at'] ?? null;
+        $end = $this->pageFilters['end_at'] ?? null;
+
+        $startDate = is_string($start) && $start !== ''
+            ? CarbonImmutable::parse($start)
+            : CarbonImmutable::today()->subMonth()->setDay(15);
+
+        $endDate = is_string($end) && $end !== ''
+            ? CarbonImmutable::parse($end)
+            : CarbonImmutable::today()->setDay(15);
+
+        if ($endDate->lessThanOrEqualTo($startDate)) {
+            $endDate = $startDate->addMonth();
+        }
+
+        return [$startDate, $endDate];
+    }
+
+    /**
+     * @param  array<int, object>  $rows
+     * @return array<int, string>
+     */
+    private function resolveColors(array $rows): array
+    {
+        $palette = $this->palette();
+        $paletteSize = count($palette);
+
+        $colors = [];
+
+        foreach ($rows as $row) {
+            if (($row->name ?? null) === 'Otros') {
+                $colors[] = Color::convertToRgb(Color::Slate[400]);
+
+                continue;
+            }
+
+            if (($row->categoryId ?? null) === null) {
+                $colors[] = Color::convertToRgb(Color::Zinc[400]);
+
+                continue;
+            }
+
+            $index = $this->resolveColorIndexFromId((int) $row->categoryId, $paletteSize);
+            $colors[] = Color::convertToRgb($palette[$index]);
+        }
+
+        return $colors;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function palette(): array
+    {
+        return [
+            Color::Red[500],
+            Color::Orange[500],
+            Color::Amber[500],
+            Color::Yellow[500],
+            Color::Lime[500],
+            Color::Green[500],
+            Color::Emerald[500],
+            Color::Teal[500],
+            Color::Cyan[500],
+            Color::Sky[500],
+            Color::Blue[500],
+            Color::Indigo[500],
+            Color::Violet[500],
+            Color::Purple[500],
+            Color::Fuchsia[500],
+            Color::Pink[500],
+            Color::Rose[500],
+            Color::Slate[500],
+            Color::Gray[500],
+            Color::Stone[500],
+        ];
+    }
+
+    private function resolveColorIndexFromId(int $id, int $paletteSize = 30): int
+    {
+        return abs($id) % $paletteSize;
+    }
+}
