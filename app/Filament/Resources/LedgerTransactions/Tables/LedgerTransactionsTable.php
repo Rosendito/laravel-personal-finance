@@ -10,11 +10,12 @@ use App\Models\LedgerEntry;
 use App\Models\LedgerTransaction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -40,24 +41,57 @@ final class LedgerTransactionsTable
             ->defaultSort('effective_at', 'desc')
             ->columns(self::getColumns())
             ->filters([
-                SelectFilter::make('category_id')
+                Filter::make('category')
                     ->label('Categoría')
-                    ->multiple()
-                    ->options(static function (): array {
-                        $userId = Auth::id() ?? 0;
+                    ->schema([
+                        Toggle::make('uncategorized')
+                            ->label('Sin categoría')
+                            ->default(false)
+                            ->live()
+                            ->afterStateUpdated(static function (bool $state, callable $set): void {
+                                if ($state) {
+                                    $set('category_ids', []);
+                                }
+                            }),
+                        Select::make('category_ids')
+                            ->label('Categoría')
+                            ->multiple()
+                            ->native(false)
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->options(static function (): array {
+                                $userId = Auth::id() ?? 0;
 
-                        return \App\Models\Category::query()
-                            ->where('user_id', $userId)
-                            ->where('is_archived', false)
-                            ->orderBy('name')
-                            ->pluck('name', 'id')
-                            ->toArray();
-                    })
+                                return \App\Models\Category::query()
+                                    ->where('user_id', $userId)
+                                    ->where('is_archived', false)
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                                    ->toArray();
+                            })
+                            ->disabled(static fn (callable $get): bool => (bool) $get('uncategorized'))
+                            ->afterStateUpdated(static function (array $state, callable $set): void {
+                                if ($state !== []) {
+                                    $set('uncategorized', false);
+                                }
+                            }),
+                    ])
                     ->query(static function (Builder $query, array $data): Builder {
-                        return $query->when(
-                            filled($data['values'] ?? null),
-                            static fn (Builder $query, array $values): Builder => $query->whereIn('category_id', $values),
-                        );
+                        $uncategorized = (bool) ($data['uncategorized'] ?? false);
+                        /** @var array<int, int|string> $categoryIds */
+                        $categoryIds = (array) ($data['category_ids'] ?? []);
+
+                        return $query->whereCategoryFilter($uncategorized, $categoryIds);
+                    })
+                    ->indicateUsing(static function (array $data): ?string {
+                        if (($data['uncategorized'] ?? false) === true) {
+                            return 'Sin categoría';
+                        }
+
+                        $count = is_array($data['category_ids'] ?? null) ? count($data['category_ids']) : 0;
+
+                        return $count > 0 ? sprintf('%s categoría(s)', (string) $count) : null;
                     }),
                 Filter::make('effective_at')
                     ->label('Fecha efectiva')

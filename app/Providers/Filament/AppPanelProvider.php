@@ -41,6 +41,10 @@ final class AppPanelProvider extends PanelProvider
              * page defines the layout explicitly).
              */
             ->discoverLivewireComponents(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
+            ->discoverLivewireComponents(
+                in: app_path('Filament/Resources/LedgerTransactions/Widgets'),
+                for: 'App\Filament\Resources\LedgerTransactions\Widgets'
+            )
             // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->middleware([
                 EncryptCookies::class,

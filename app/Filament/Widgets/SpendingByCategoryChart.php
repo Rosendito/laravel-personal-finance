@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
+use App\Data\Dashboard\CategoryTotalData;
+use App\Helpers\MoneyFormatter;
+use App\Models\User;
 use App\Services\Queries\DashboardSpendingByCategoryQueryService;
 use Carbon\CarbonImmutable;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 final class SpendingByCategoryChart extends ChartWidget
@@ -19,6 +23,22 @@ final class SpendingByCategoryChart extends ChartWidget
 
     protected int|string|array $columnSpan = 1;
 
+    private ?Collection $totalsCache = null;
+
+    public function getDescription(): ?string
+    {
+        $user = Auth::user();
+
+        if (! $user instanceof User) {
+            return null;
+        }
+
+        $currency = config('finance.currency.default', 'USD');
+        $totalSpent = $this->totalSpent($user);
+
+        return sprintf('Total gastado: %s', MoneyFormatter::format($totalSpent, $currency));
+    }
+
     protected function getType(): string
     {
         return 'doughnut';
@@ -28,17 +48,14 @@ final class SpendingByCategoryChart extends ChartWidget
     {
         $user = Auth::user();
 
-        if ($user === null) {
+        if (! $user instanceof User) {
             return [
                 'datasets' => [],
                 'labels' => [],
             ];
         }
 
-        [$start, $end] = $this->dateRange();
-
-        $totals = app(DashboardSpendingByCategoryQueryService::class)
-            ->totals($user, $start, $end);
+        $totals = $this->totals($user);
 
         if ($totals->isEmpty()) {
             return [
@@ -58,7 +75,7 @@ final class SpendingByCategoryChart extends ChartWidget
 
         if ($rest->isNotEmpty()) {
             $restTotal = $rest->sum(static fn ($item) => (float) $item->total);
-            $top = $top->push(new \App\Data\Dashboard\CategoryTotalData(categoryId: null, name: 'Otros', total: $restTotal));
+            $top = $top->push(new CategoryTotalData(categoryId: null, name: 'Otros', total: $restTotal));
         }
 
         $labels = $top->map(static fn ($row) => $row->name)->all();
@@ -98,6 +115,34 @@ final class SpendingByCategoryChart extends ChartWidget
         }
 
         return [$startDate, $endDate];
+    }
+
+    /**
+     * @return Collection<int, CategoryTotalData>
+     */
+    private function totals(User $user): Collection
+    {
+        if ($this->totalsCache !== null) {
+            /** @var Collection<int, CategoryTotalData> $totals */
+            $totals = $this->totalsCache;
+
+            return $totals;
+        }
+
+        [$start, $end] = $this->dateRange();
+
+        /** @var Collection<int, CategoryTotalData> $totals */
+        $totals = app(DashboardSpendingByCategoryQueryService::class)->totals($user, $start, $end);
+
+        $this->totalsCache = $totals;
+
+        return $totals;
+    }
+
+    private function totalSpent(User $user): float
+    {
+        return $this->totals($user)
+            ->sum(static fn (CategoryTotalData $row): float => (float) $row->total);
     }
 
     /**

@@ -118,8 +118,8 @@ final class LedgerTransactionService
 
         $period = BudgetPeriod::query()
             ->where('budget_id', $category->budget_id)
-            ->where('start_at', '<=', $effectiveAt->toDateString())
-            ->where('end_at', '>', $effectiveAt->toDateString())
+            ->whereDate('start_at', '<=', $effectiveAt->toDateString())
+            ->whereDate('end_at', '>', $effectiveAt->toDateString())
             ->orderByDesc('start_at')
             ->first();
 

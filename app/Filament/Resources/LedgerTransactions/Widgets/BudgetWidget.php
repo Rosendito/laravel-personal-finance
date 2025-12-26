@@ -6,11 +6,16 @@ namespace App\Filament\Resources\LedgerTransactions\Widgets;
 
 use App\Helpers\MoneyFormatter;
 use App\Models\Budget;
+use App\Services\Queries\BudgetPeriodForDateQueryService;
+use Carbon\CarbonImmutable;
+use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget;
 use Illuminate\Support\Facades\Auth;
 
 final class BudgetWidget extends StatsOverviewWidget
 {
+    use InteractsWithPageFilters;
+
     protected int|string|array $columnSpan = 'full';
 
     protected int|array|null $columns = 4;
@@ -28,13 +33,21 @@ final class BudgetWidget extends StatsOverviewWidget
 
         $currency = config('finance.currency.default');
 
+        $anchorDate = $this->anchorDateFromPageFilters();
+        $periodResolver = $anchorDate === null ? null : app(BudgetPeriodForDateQueryService::class);
+
         return Budget::query()
             ->where('user_id', $user->id)
             ->where('is_active', true)
-            ->with('currentPeriod')
+            ->when(
+                $anchorDate === null,
+                static fn ($query) => $query->with('currentPeriod'),
+            )
             ->get()
-            ->map(function (Budget $budget) use ($currency) {
-                $period = $budget->currentPeriod;
+            ->map(function (Budget $budget) use ($currency, $anchorDate, $periodResolver) {
+                $period = $anchorDate === null
+                    ? $budget->currentPeriod
+                    : $periodResolver?->forBudget($budget->id, $anchorDate);
 
                 if ($period === null) {
                     return null;
@@ -51,5 +64,22 @@ final class BudgetWidget extends StatsOverviewWidget
             ->filter()
             ->values()
             ->all();
+    }
+
+    private function anchorDateFromPageFilters(): ?CarbonImmutable
+    {
+        $start = $this->pageFilters['start_at'] ?? null;
+
+        if (is_string($start) && $start !== '') {
+            return CarbonImmutable::parse($start)->startOfDay();
+        }
+
+        $end = $this->pageFilters['end_at'] ?? null;
+
+        if (is_string($end) && $end !== '') {
+            return CarbonImmutable::parse($end)->subDay()->startOfDay();
+        }
+
+        return null;
     }
 }

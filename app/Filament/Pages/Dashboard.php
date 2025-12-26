@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
-use App\Filament\Widgets\BudgetProgressTable;
+use App\Filament\Resources\LedgerTransactions\Widgets\BudgetWidget;
 use App\Filament\Widgets\CashflowTrendChart;
 use App\Filament\Widgets\FinanceSnapshotStats;
 use App\Filament\Widgets\RecentTransactionsTable;
@@ -56,7 +56,7 @@ final class Dashboard extends BaseDashboard
     protected function getFooterWidgets(): array
     {
         return [
-            BudgetProgressTable::class,
+            BudgetWidget::class,
             RecentTransactionsTable::class,
         ];
     }
