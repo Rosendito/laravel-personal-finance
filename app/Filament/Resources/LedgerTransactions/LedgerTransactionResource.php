@@ -55,20 +55,20 @@ final class LedgerTransactionResource extends Resource
 
     public static function getNavigationItems(): array
     {
-        $routeBaseName = static::getRouteBaseName();
+        $routeBaseName = self::getRouteBaseName();
 
         return [
-            NavigationItem::make(static::getNavigationLabel())
-                ->group(static::getNavigationGroup())
-                ->icon(static::getNavigationIcon())
-                ->isActiveWhen(fn() => request()->routeIs($routeBaseName . '.*') && ! request()->routeIs($routeBaseName . '.liabilities'))
-                ->url(static::getUrl('index')),
+            NavigationItem::make(self::getNavigationLabel())
+                ->group(self::getNavigationGroup())
+                ->icon(self::getNavigationIcon())
+                ->isActiveWhen(fn () => request()->routeIs($routeBaseName.'.*') && ! request()->routeIs($routeBaseName.'.liabilities'))
+                ->url(self::getUrl('index')),
 
             NavigationItem::make('Deudas y Préstamos')
                 ->icon('heroicon-o-banknotes')
-                ->group(static::getNavigationGroup())
-                ->isActiveWhen(fn() => request()->routeIs($routeBaseName . '.liabilities'))
-                ->url(static::getUrl('liabilities')),
+                ->group(self::getNavigationGroup())
+                ->isActiveWhen(fn () => request()->routeIs($routeBaseName.'.liabilities'))
+                ->url(self::getUrl('liabilities')),
         ];
     }
 

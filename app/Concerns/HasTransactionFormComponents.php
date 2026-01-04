@@ -106,7 +106,7 @@ trait HasTransactionFormComponents
     ): Select {
         return Select::make($name)
             ->label($label)
-            ->options(static fn(): array => static::getAccountOptions())
+            ->options(static fn (): array => static::getAccountOptions())
             ->default($defaultCallback)
             ->searchable()
             ->preload()

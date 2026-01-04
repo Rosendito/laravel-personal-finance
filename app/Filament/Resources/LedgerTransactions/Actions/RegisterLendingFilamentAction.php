@@ -29,7 +29,7 @@ final class RegisterLendingFilamentAction
             ->schema([
                 Select::make('target_account_id')
                     ->label('Cuenta de Préstamo por Cobrar')
-                    ->options(static fn(): array => self::getAccountOptionsBySubtype(LedgerAccountSubType::LOAN_RECEIVABLE))
+                    ->options(static fn (): array => self::getAccountOptionsBySubtype(LedgerAccountSubType::LOAN_RECEIVABLE))
                     ->searchable()
                     ->preload()
                     ->required()

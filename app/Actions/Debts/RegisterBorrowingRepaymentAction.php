@@ -107,6 +107,6 @@ final class RegisterBorrowingRepaymentAction
 
     private function invertAmount(string $amount): string
     {
-        return '-' . mb_ltrim($amount, '+');
+        return '-'.mb_ltrim($amount, '+');
     }
 }

@@ -83,13 +83,13 @@ final class LedgerTransaction extends Model
             return $query->whereNull('category_id');
         }
 
-        $categoryIds = array_values(array_filter($categoryIds, static fn(mixed $value): bool => $value !== null && $value !== ''));
+        $categoryIds = array_values(array_filter($categoryIds, static fn (mixed $value): bool => $value !== null && $value !== ''));
 
         if ($categoryIds === []) {
             return $query;
         }
 
-        $categoryIds = array_values(array_map(static fn(mixed $value): int => (int) $value, $categoryIds));
+        $categoryIds = array_values(array_map(static fn (mixed $value): int => (int) $value, $categoryIds));
 
         return $query->whereIn('category_id', $categoryIds);
     }
@@ -103,7 +103,7 @@ final class LedgerTransaction extends Model
         }
 
         $total = $entries->reduce(
-            static fn(string $carry, LedgerEntry $entry): string => bcadd($carry, (string) ($entry->amount_base ?? $entry->amount), 6),
+            static fn (string $carry, LedgerEntry $entry): string => bcadd($carry, (string) ($entry->amount_base ?? $entry->amount), 6),
             '0'
         );
 

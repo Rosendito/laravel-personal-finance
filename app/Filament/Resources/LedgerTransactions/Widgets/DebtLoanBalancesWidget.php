@@ -77,11 +77,11 @@ final class DebtLoanBalancesWidget extends StatsOverviewWidget implements HasAct
             });
 
         $receivables = $allBalances->filter(
-            static fn(AccountBalanceData $balance): bool => $balance->subtype === LedgerAccountSubType::LOAN_RECEIVABLE->value,
+            static fn (AccountBalanceData $balance): bool => $balance->subtype === LedgerAccountSubType::LOAN_RECEIVABLE->value,
         );
 
         $payables = $allBalances->filter(
-            static fn(AccountBalanceData $balance): bool => $balance->subtype === LedgerAccountSubType::LOAN_PAYABLE->value,
+            static fn (AccountBalanceData $balance): bool => $balance->subtype === LedgerAccountSubType::LOAN_PAYABLE->value,
         );
 
         $stats = [];

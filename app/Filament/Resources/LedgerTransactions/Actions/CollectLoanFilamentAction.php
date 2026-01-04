@@ -24,7 +24,7 @@ final class CollectLoanFilamentAction
             ->icon('heroicon-o-arrow-down-circle')
             ->color('success')
             ->modalHeading('Cobrar Préstamo')
-            ->fillForm(fn(array $arguments): array => [
+            ->fillForm(fn (array $arguments): array => [
                 'target_account_id' => $accountId ?? $arguments['accountId'] ?? null,
                 'effective_at' => Carbon::now()->toDateTimeString(),
             ])
