@@ -49,6 +49,16 @@ describe(DashboardSpendingByCategoryQueryService::class, function (): void {
             ->state(['name' => 'Food'])
             ->create();
 
+        $groceries = Category::factory()
+            ->for($this->user)
+            ->expense()
+            ->state([
+                'name' => 'Groceries',
+                'parent_id' => $food->id,
+                'is_reportable' => false,
+            ])
+            ->create();
+
         $health = Category::factory()
             ->for($this->user)
             ->expense()
@@ -60,7 +70,7 @@ describe(DashboardSpendingByCategoryQueryService::class, function (): void {
 
         $t1 = LedgerTransaction::factory()
             ->for($this->user)
-            ->withCategory($food)
+            ->withCategory($groceries)
             ->state(['effective_at' => CarbonImmutable::parse('2025-01-10 10:00:00')])
             ->create();
 
@@ -78,7 +88,7 @@ describe(DashboardSpendingByCategoryQueryService::class, function (): void {
 
         $t2 = LedgerTransaction::factory()
             ->for($this->user)
-            ->withCategory($food)
+            ->withCategory($groceries)
             ->state(['effective_at' => CarbonImmutable::parse('2025-01-15 10:00:00')])
             ->create();
 
