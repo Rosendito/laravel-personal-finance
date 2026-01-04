@@ -62,6 +62,15 @@ final class LedgerAccount extends Model
             ]);
     }
 
+    public function scopeWithBaseBalance(Builder $query): Builder
+    {
+        return $query
+            ->addSelect([
+                'balance_base' => LedgerEntry::selectRaw('COALESCE(SUM(COALESCE(amount_base, amount)), 0)')
+                    ->whereColumn('account_id', 'ledger_accounts.id'),
+            ]);
+    }
+
     /**
      * @return array<string, string>
      */

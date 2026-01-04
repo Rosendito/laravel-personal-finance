@@ -72,6 +72,15 @@ final class LedgerAccountsTable
                     ))
                     ->alignRight()
                     ->sortable(),
+                TextColumn::make('balance_base')
+                    ->label('Balance base')
+                    ->state(static fn (LedgerAccount $record): string => MoneyFormatter::format(
+                        $record->balance_base ?? 0,
+                        config('finance.currency.default') ?? '',
+                    ))
+                    ->alignRight()
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('entries_count')
                     ->label('Movimientos')
                     ->counts('entries')

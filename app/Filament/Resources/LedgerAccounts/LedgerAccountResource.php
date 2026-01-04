@@ -70,6 +70,7 @@ final class LedgerAccountResource extends Resource
 
         return $query
             ->where('user_id', $userId)
-            ->withBalance();
+            ->withBalance()
+            ->withBaseBalance();
     }
 }

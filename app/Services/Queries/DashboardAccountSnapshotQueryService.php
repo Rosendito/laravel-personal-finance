@@ -8,6 +8,7 @@ use App\Data\Dashboard\DashboardSnapshotData;
 use App\Enums\LedgerAccountSubType;
 use App\Enums\LedgerAccountType;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -15,6 +16,12 @@ final class DashboardAccountSnapshotQueryService
 {
     public function snapshot(User $user, CarbonInterface $asOf): DashboardSnapshotData
     {
+        $asOfDateTime = CarbonImmutable::instance($asOf);
+
+        if ($asOfDateTime->format('H:i:s') === '00:00:00') {
+            $asOfDateTime = $asOfDateTime->endOfDay();
+        }
+
         $rows = DB::query()
             ->from('ledger_entries as e')
             ->selectRaw('a.subtype')
@@ -22,10 +29,11 @@ final class DashboardAccountSnapshotQueryService
             ->selectRaw('COALESCE(SUM(COALESCE(e.amount_base, e.amount)), 0) as total')
             ->join('ledger_accounts as a', 'a.id', '=', 'e.account_id')
             ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
+            ->where('a.user_id', $user->id)
             ->where('t.user_id', $user->id)
             ->where('a.is_archived', false)
             ->where('a.is_fundamental', false)
-            ->where('t.effective_at', '<=', $asOf->toDateString())
+            ->where('t.effective_at', '<=', $asOfDateTime)
             ->whereIn('a.type', [
                 LedgerAccountType::ASSET->value,
                 LedgerAccountType::LIABILITY->value,
