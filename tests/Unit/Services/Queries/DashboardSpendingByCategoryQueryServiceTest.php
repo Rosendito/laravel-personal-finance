@@ -52,7 +52,10 @@ describe(DashboardSpendingByCategoryQueryService::class, function (): void {
         $health = Category::factory()
             ->for($this->user)
             ->expense()
-            ->state(['name' => 'Health'])
+            ->state([
+                'name' => 'Health',
+                'is_reportable' => false,
+            ])
             ->create();
 
         $t1 = LedgerTransaction::factory()
@@ -128,18 +131,14 @@ describe(DashboardSpendingByCategoryQueryService::class, function (): void {
 
         $totals = $this->service->totals($this->user, $start, $end)->values();
 
-        expect($totals)->toHaveCount(3);
+        expect($totals)->toHaveCount(2);
 
         expect($totals[0]->categoryId)->toBe($food->id);
         expect($totals[0]->name)->toBe('Food');
         expect((float) $totals[0]->total)->toBe(300.0);
 
-        expect($totals[1]->categoryId)->toBe($health->id);
-        expect($totals[1]->name)->toBe('Health');
-        expect((float) $totals[1]->total)->toBe(50.0);
-
-        expect($totals[2]->categoryId)->toBeNull();
-        expect($totals[2]->name)->toBe('Sin categoría');
-        expect((float) $totals[2]->total)->toBe(30.0);
+        expect($totals[1]->categoryId)->toBeNull();
+        expect($totals[1]->name)->toBe('Sin categoría');
+        expect((float) $totals[1]->total)->toBe(30.0);
     });
 });

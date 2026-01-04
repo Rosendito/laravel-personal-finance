@@ -11,6 +11,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -33,12 +34,12 @@ final class CategoriesTable
                 TextColumn::make('type')
                     ->label('Tipo')
                     ->badge()
-                    ->formatStateUsing(static fn (?CategoryType $state): string => match ($state) {
+                    ->formatStateUsing(static fn(?CategoryType $state): string => match ($state) {
                         CategoryType::Income => 'Ingreso',
                         CategoryType::Expense => 'Gasto',
                         default => 'Desconocido',
                     })
-                    ->color(static fn (?CategoryType $state): string => match ($state) {
+                    ->color(static fn(?CategoryType $state): string => match ($state) {
                         CategoryType::Income => 'success',
                         CategoryType::Expense => 'warning',
                         default => 'gray',
@@ -71,13 +72,18 @@ final class CategoriesTable
                 TextColumn::make('entries_count')
                     ->label('Movimientos')
                     ->counts('entries')
-                    ->formatStateUsing(static fn (?int $state): string => (string) ($state ?? 0))
+                    ->formatStateUsing(static fn(?int $state): string => (string) ($state ?? 0))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_archived')
                     ->label('Archivada')
                     ->boolean()
                     ->alignCenter(),
+                IconColumn::make('is_reportable')
+                    ->label('Reportable')
+                    ->boolean()
+                    ->alignCenter()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
                     ->label('Actualizada')
                     ->dateTime()
@@ -108,9 +114,16 @@ final class CategoriesTable
                     ->placeholder('Todas')
                     ->trueLabel('Archivadas')
                     ->falseLabel('Activas'),
+                TernaryFilter::make('is_reportable')
+                    ->label('Reporte')
+                    ->nullable()
+                    ->placeholder('Todas')
+                    ->trueLabel('Reportables')
+                    ->falseLabel('No reportables'),
             ])
             ->recordActions([
                 EditAction::make(),
+                ViewAction::make(),
                 DeleteAction::make(),
             ])
             ->toolbarActions([

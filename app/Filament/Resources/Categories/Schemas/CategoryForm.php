@@ -27,7 +27,7 @@ final class CategoryForm
                     ->description('Organiza tus categorías y asigna presupuestos opcionales.')
                     ->schema([
                         Hidden::make('user_id')
-                            ->default(static fn (): ?int => Auth::id())
+                            ->default(static fn(): ?int => Auth::id())
                             ->required(),
                         TextInput::make('name')
                             ->label('Nombre')
@@ -109,6 +109,10 @@ final class CategoryForm
                         Toggle::make('is_archived')
                             ->label('Archivada')
                             ->default(false),
+                        Toggle::make('is_reportable')
+                            ->label('Reportable')
+                            ->helperText('Si está desactivado, esta categoría no se incluirá en los reportes y gráficos.')
+                            ->default(true),
                     ])
                     ->columns(2),
             ]);

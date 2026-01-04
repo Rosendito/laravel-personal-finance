@@ -72,6 +72,7 @@ final class Category extends Model
             'name' => 'string',
             'type' => CategoryType::class,
             'is_archived' => 'boolean',
+            'is_reportable' => 'boolean',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];

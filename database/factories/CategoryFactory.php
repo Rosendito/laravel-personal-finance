@@ -27,6 +27,7 @@ final class CategoryFactory extends Factory
             'name' => fake()->unique()->words(2, true),
             'type' => fake()->randomElement(array_map(static fn (CategoryType $type): string => $type->value, CategoryType::cases())),
             'is_archived' => false,
+            'is_reportable' => true,
         ];
     }
 
