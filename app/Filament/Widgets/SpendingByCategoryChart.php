@@ -69,18 +69,9 @@ final class SpendingByCategoryChart extends ChartWidget
                 'labels' => ['Sin datos'],
             ];
         }
-
-        $top = $totals->take(8);
-        $rest = $totals->skip(8);
-
-        if ($rest->isNotEmpty()) {
-            $restTotal = $rest->sum(static fn ($item) => (float) $item->total);
-            $top = $top->push(new CategoryTotalData(categoryId: null, name: 'Otros', total: $restTotal));
-        }
-
-        $labels = $top->map(static fn ($row) => $row->name)->all();
-        $data = $top->map(static fn ($row) => (float) $row->total)->all();
-        $colors = $this->resolveColors($top->all());
+        $labels = $totals->map(static fn ($row) => $row->name)->all();
+        $data = $totals->map(static fn ($row) => (float) $row->total)->all();
+        $colors = $this->resolveColors($totals->all());
 
         return [
             'datasets' => [
@@ -157,12 +148,6 @@ final class SpendingByCategoryChart extends ChartWidget
         $colors = [];
 
         foreach ($rows as $row) {
-            if (($row->name ?? null) === 'Otros') {
-                $colors[] = Color::convertToRgb(Color::Slate[400]);
-
-                continue;
-            }
-
             if (($row->categoryId ?? null) === null) {
                 $colors[] = Color::convertToRgb(Color::Zinc[400]);
 

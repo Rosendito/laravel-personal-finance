@@ -10,10 +10,14 @@ use App\Filament\Widgets\FinanceSnapshotStats;
 use App\Filament\Widgets\RecentTransactionsTable;
 use App\Filament\Widgets\SpendingByCategoryChart;
 use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 final class Dashboard extends BaseDashboard
@@ -25,7 +29,8 @@ final class Dashboard extends BaseDashboard
         [$defaultStart, $defaultEnd] = $this->defaultRange();
 
         return $schema->components([
-            Section::make('Rango de fechas')
+            Section::make()
+                ->columnSpanFull()
                 ->schema([
                     DatePicker::make('start_at')
                         ->label('Inicio')
@@ -37,9 +42,43 @@ final class Dashboard extends BaseDashboard
                         ->default($defaultEnd->toDateString())
                         ->native(false)
                         ->closeOnDateSelection(),
+                    Actions::make([
+                        Action::make('previous_month')
+                            ->label('Mes anterior')
+                            ->color('gray')
+                            ->action(function (Get $get, Set $set): void {
+                                $month = $this->selectedMonthStart($get)->subMonth();
+                                $this->setMonthRange($set, $month);
+                            }),
+                        Action::make('current_month')
+                            ->label('Mes actual')
+                            ->color('gray')
+                            ->action(function (Set $set): void {
+                                $this->setMonthRange($set, $this->nowMonthStart());
+                            })
+                            ->disabled(function (Get $get): bool {
+                                return $this->selectedMonthStart($get)->equalTo($this->nowMonthStart());
+                            }),
+                        Action::make('next_month')
+                            ->label('Mes siguiente')
+                            ->color('gray')
+                            ->action(function (Get $get, Set $set): void {
+                                $month = $this->selectedMonthStart($get)->addMonth();
+                                $this->setMonthRange($set, $month);
+                            })
+                            ->disabled(function (Get $get): bool {
+                                $nextMonth = $this->selectedMonthStart($get)->addMonth();
+
+                                return $nextMonth->greaterThan($this->nowMonthStart());
+                            }),
+                    ])
+                        ->label('Acciones')
+                        ->columnSpan([
+                            'md' => 2,
+                        ]),
                 ])
                 ->columns([
-                    'md' => 2,
+                    'md' => 4,
                 ]),
         ]);
     }
@@ -48,14 +87,14 @@ final class Dashboard extends BaseDashboard
     {
         return [
             FinanceSnapshotStats::class,
-            SpendingByCategoryChart::class,
-            CashflowTrendChart::class,
         ];
     }
 
     protected function getFooterWidgets(): array
     {
         return [
+            SpendingByCategoryChart::class,
+            CashflowTrendChart::class,
             BudgetWidget::class,
             RecentTransactionsTable::class,
         ];
@@ -76,5 +115,36 @@ final class Dashboard extends BaseDashboard
             : $today->addMonth()->setDay(15);
 
         return [$fifteenth, $end];
+    }
+
+    private function nowMonthStart(): CarbonImmutable
+    {
+        return CarbonImmutable::today()->startOfMonth();
+    }
+
+    private function selectedMonthStart(Get $get): CarbonImmutable
+    {
+        $start = $get->string('start_at', isNullable: true);
+
+        if ($start !== null) {
+            return CarbonImmutable::parse($start)->startOfMonth();
+        }
+
+        $end = $get->string('end_at', isNullable: true);
+
+        if ($end !== null) {
+            return CarbonImmutable::parse($end)->subMonth()->startOfMonth();
+        }
+
+        return $this->nowMonthStart();
+    }
+
+    private function setMonthRange(Set $set, CarbonImmutable $monthStart): void
+    {
+        $monthStart = $monthStart->startOfMonth();
+        $monthEnd = $monthStart->addMonth();
+
+        $set('start_at', $monthStart->toDateString(), false, true);
+        $set('end_at', $monthEnd->toDateString(), false, true);
     }
 }
