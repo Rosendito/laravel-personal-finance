@@ -20,26 +20,25 @@ final class DashboardSpendingByCategoryQueryService
     {
         $rows = DB::query()
             ->from('ledger_entries as e')
-            ->selectRaw('COALESCE(p.id, c.id) as category_id')
-            ->selectRaw('COALESCE(p.name, c.name, \'Sin categoría\') as category_name')
+            ->selectRaw('t.category_id as category_id')
+            ->selectRaw('COALESCE(c.name, \'Sin categoría\') as category_name')
             ->selectRaw('SUM(CASE WHEN COALESCE(e.amount_base, e.amount) > 0 THEN COALESCE(e.amount_base, e.amount) ELSE 0 END) as total')
             ->join('ledger_accounts as a', 'a.id', '=', 'e.account_id')
             ->join('ledger_transactions as t', 't.id', '=', 'e.transaction_id')
             ->leftJoin('categories as c', 'c.id', '=', 't.category_id')
-            ->leftJoin('categories as p', 'p.id', '=', 'c.parent_id')
             ->where('t.user_id', $user->id)
             ->where('a.type', LedgerAccountType::EXPENSE->value)
             ->where(static function ($query) {
                 $query
                     ->whereNull('t.category_id')
-                    ->orWhereRaw('COALESCE(p.is_reportable, c.is_reportable) = 1');
+                    ->orWhere('c.is_reportable', true);
             })
             ->whereBetween('t.effective_at', [
                 $startAt->toDateString(),
                 $endAt->toDateString(),
             ])
-            ->groupByRaw('COALESCE(p.id, c.id)')
-            ->groupByRaw('COALESCE(p.name, c.name, \'Sin categoría\')')
+            ->groupBy('t.category_id')
+            ->groupBy('category_name')
             ->havingRaw('total > 0')
             ->orderByDesc('total')
             ->get();
