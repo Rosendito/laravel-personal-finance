@@ -10,8 +10,8 @@ use App\Filament\Resources\LedgerTransactions\Schemas\LedgerTransactionForm;
 use App\Models\LedgerTransaction;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
 
 final class EditLedgerTransactionFilamentAction
 {
@@ -23,15 +23,13 @@ final class EditLedgerTransactionFilamentAction
             ->color('primary')
             ->modalHeading('Editar Transacción')
             ->schema(LedgerTransactionForm::getComponents())
-            ->fillForm(static function (LedgerTransaction $record): array {
-                return [
-                    'description' => $record->description,
-                    'effective_at' => $record->effective_at,
-                    'posted_at' => $record->posted_at,
-                    'reference' => $record->reference,
-                    'category_id' => $record->category_id,
-                ];
-            })
+            ->fillForm(static fn (LedgerTransaction $record): array => [
+                'description' => $record->description,
+                'effective_at' => $record->effective_at,
+                'posted_at' => $record->posted_at,
+                'reference' => $record->reference,
+                'category_id' => $record->category_id,
+            ])
             ->action(static function (LedgerTransaction $record, array $data): void {
                 $user = Auth::user();
 
@@ -45,9 +43,9 @@ final class EditLedgerTransactionFilamentAction
                     return;
                 }
 
-                $effectiveAt = Carbon::parse($data['effective_at']);
+                $effectiveAt = Date::parse($data['effective_at']);
                 $postedAt = filled($data['posted_at'] ?? null)
-                    ? Carbon::parse($data['posted_at'])
+                    ? Date::parse($data['posted_at'])
                     : null;
 
                 $updateData = UpdateLedgerTransactionData::from([
@@ -58,7 +56,7 @@ final class EditLedgerTransactionFilamentAction
                     'category_id' => $data['category_id'] ?? null,
                 ]);
 
-                $action = app(UpdateLedgerTransactionAction::class);
+                $action = resolve(UpdateLedgerTransactionAction::class);
                 $action->execute($user, $record, $updateData);
 
                 Notification::make()

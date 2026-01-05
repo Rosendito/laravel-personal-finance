@@ -36,7 +36,7 @@ final class AccountBalancesWidget extends StatsOverviewWidget
         $currency = config('finance.currency.default', 'USD');
 
         // Calculate net worth
-        $netWorth = app(NetWorthQueryService::class)->calculateForUser($user);
+        $netWorth = resolve(NetWorthQueryService::class)->calculateForUser($user);
         $netWorthStat = Stat::make('Patrimonio Neto', MoneyFormatter::format($netWorth, $currency));
 
         $liquidSubtypes = array_map(
@@ -45,10 +45,10 @@ final class AccountBalancesWidget extends StatsOverviewWidget
         );
 
         /** @var Collection<int, AccountBalanceData> $balances */
-        $balances = app(AccountBalanceQueryService::class)
+        $balances = resolve(AccountBalanceQueryService::class)
             ->totalsForUser($user)
             ->filter(static function (AccountBalanceData $balance) use ($liquidSubtypes): bool {
-                if ($balance->is_fundamental === true) {
+                if ($balance->is_fundamental) {
                     return false;
                 }
 

@@ -7,6 +7,7 @@ namespace App\Filament\Resources\Budgets;
 use App\Filament\Resources\Budgets\Pages\CreateBudget;
 use App\Filament\Resources\Budgets\Pages\EditBudget;
 use App\Filament\Resources\Budgets\Pages\ListBudgets;
+use App\Filament\Resources\Budgets\RelationManagers\PeriodsRelationManager;
 use App\Filament\Resources\Budgets\Schemas\BudgetForm;
 use App\Filament\Resources\Budgets\Tables\BudgetsTable;
 use App\Models\Budget;
@@ -42,7 +43,7 @@ final class BudgetResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\PeriodsRelationManager::class,
+            PeriodsRelationManager::class,
         ];
     }
 

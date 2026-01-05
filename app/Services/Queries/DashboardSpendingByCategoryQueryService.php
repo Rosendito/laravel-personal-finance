@@ -28,7 +28,7 @@ final class DashboardSpendingByCategoryQueryService
             ->leftJoin('categories as c', 'c.id', '=', 't.category_id')
             ->where('t.user_id', $user->id)
             ->where('a.type', LedgerAccountType::EXPENSE->value)
-            ->where(static function ($query) {
+            ->where(static function ($query): void {
                 $query
                     ->whereNull('t.category_id')
                     ->orWhere('c.is_reportable', true);
@@ -44,7 +44,7 @@ final class DashboardSpendingByCategoryQueryService
             ->get();
 
         return $rows->map(
-            static fn(object $row): CategoryTotalData => new CategoryTotalData(
+            static fn (object $row): CategoryTotalData => new CategoryTotalData(
                 categoryId: $row->category_id === null ? null : (int) $row->category_id,
                 name: (string) $row->category_name,
                 total: (string) $row->total,

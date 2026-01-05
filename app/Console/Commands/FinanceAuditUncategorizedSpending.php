@@ -140,9 +140,7 @@ final class FinanceAuditUncategorizedSpending extends Command
 
         $count = User::query()->count();
 
-        if ($count < 1) {
-            throw new InvalidArgumentException('No users found.');
-        }
+        throw_if($count < 1, InvalidArgumentException::class, 'No users found.');
 
         if ($count === 1) {
             return (int) User::query()->value('id');
@@ -184,9 +182,7 @@ final class FinanceAuditUncategorizedSpending extends Command
         $start = CarbonImmutable::parse($startInput)->startOfDay();
         $end = CarbonImmutable::parse($endInput)->endOfDay();
 
-        if ($end->lessThan($start)) {
-            throw new InvalidArgumentException('end_at must be greater than or equal to start_at.');
-        }
+        throw_if($end->lessThan($start), InvalidArgumentException::class, 'end_at must be greater than or equal to start_at.');
 
         return [$start, $end];
     }

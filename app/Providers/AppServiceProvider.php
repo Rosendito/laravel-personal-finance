@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\LedgerAccount;
+use App\Models\User;
+use App\Observers\LedgerAccountObserver;
+use App\Observers\UserObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 
@@ -27,7 +31,7 @@ final class AppServiceProvider extends ServiceProvider
 
     private function bootObservers(): void
     {
-        \App\Models\User::observe(\App\Observers\UserObserver::class);
-        \App\Models\LedgerAccount::observe(\App\Observers\LedgerAccountObserver::class);
+        User::observe(UserObserver::class);
+        LedgerAccount::observe(LedgerAccountObserver::class);
     }
 }

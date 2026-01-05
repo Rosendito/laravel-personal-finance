@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
-Route::get('/debug-login-manual', function () {
+Route::get('/debug-login-manual', function (): array {
     /** @var User $user */
     $user = User::query()->firstOrFail();
 
@@ -33,10 +33,8 @@ Route::get('/debug-login-manual', function () {
     ];
 })->middleware('web');
 
-Route::get('/debug-auth', function () {
-    return [
-        'auth_default_user_id' => Auth::id(),
-        'auth_web_user_id' => Auth::guard('web')->id(),
-        'session_keys' => array_keys(session()->all()),
-    ];
-})->middleware('web');
+Route::get('/debug-auth', fn (): array => [
+    'auth_default_user_id' => Auth::id(),
+    'auth_web_user_id' => Auth::guard('web')->id(),
+    'session_keys' => array_keys(session()->all()),
+])->middleware('web');

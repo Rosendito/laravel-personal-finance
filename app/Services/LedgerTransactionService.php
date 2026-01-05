@@ -26,7 +26,7 @@ final class LedgerTransactionService
     {
         $existingTransaction = $this->findTransactionByIdempotencyKey($user, $transactionData->idempotency_key);
 
-        if ($existingTransaction !== null) {
+        if ($existingTransaction instanceof LedgerTransaction) {
             return $existingTransaction;
         }
 
@@ -38,7 +38,7 @@ final class LedgerTransactionService
         $accounts = $this->loadAccounts($entryCollection);
         $category = $this->loadCategoryFromData($transactionData);
 
-        if ($category !== null) {
+        if ($category instanceof Category) {
             $this->assertCategoryOwnership($category, $user);
         }
 
@@ -80,7 +80,7 @@ final class LedgerTransactionService
             ) {
                 $existingTransaction = $this->findTransactionByIdempotencyKey($user, $transactionData->idempotency_key);
 
-                if ($existingTransaction !== null) {
+                if ($existingTransaction instanceof LedgerTransaction) {
                     return $existingTransaction;
                 }
             }
@@ -112,7 +112,7 @@ final class LedgerTransactionService
         ?Category $category,
         CarbonInterface $effectiveAt
     ): ?BudgetPeriod {
-        if ($category === null || $category->budget_id === null) {
+        if (! $category instanceof Category || $category->budget_id === null) {
             return null;
         }
 
@@ -120,7 +120,7 @@ final class LedgerTransactionService
             ->where('budget_id', $category->budget_id)
             ->whereDate('start_at', '<=', $effectiveAt->toDateString())
             ->whereDate('end_at', '>', $effectiveAt->toDateString())
-            ->orderByDesc('start_at')
+            ->latest('start_at')
             ->first();
 
         if ($period === null) {
@@ -132,7 +132,7 @@ final class LedgerTransactionService
 
     public function assertCategoryOwnership(?Category $category, User $user): void
     {
-        if ($category !== null && $category->user_id !== $user->id) {
+        if ($category instanceof Category && $category->user_id !== $user->id) {
             throw LedgerIntegrityException::categoryOwnershipMismatch();
         }
     }
@@ -234,7 +234,7 @@ final class LedgerTransactionService
             }
         }
 
-        if (empty($unknownIndices)) {
+        if ($unknownIndices === []) {
             return $baseAmounts;
         }
 
@@ -348,15 +348,6 @@ final class LedgerTransactionService
         }
 
         return $currencyCode;
-    }
-
-    private function normalizeOptionalAmount(int|float|string|null $amount): ?string
-    {
-        if ($amount === null) {
-            return null;
-        }
-
-        return (string) $amount;
     }
 
     private function assertAccountOwnership(LedgerAccount $account, User $user): void

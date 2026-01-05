@@ -8,8 +8,9 @@ use App\Actions\UpdateLedgerTransactionAction;
 use App\Data\Transactions\UpdateLedgerTransactionData;
 use App\Filament\Resources\LedgerTransactions\LedgerTransactionResource;
 use Filament\Resources\Pages\EditRecord;
-use Illuminate\Support\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
 
 final class EditLedgerTransaction extends EditRecord
 {
@@ -28,7 +29,7 @@ final class EditLedgerTransaction extends EditRecord
         return $data;
     }
 
-    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
+    protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $user = Auth::user();
 
@@ -36,9 +37,9 @@ final class EditLedgerTransaction extends EditRecord
             return parent::handleRecordUpdate($record, $data);
         }
 
-        $effectiveAt = Carbon::parse($data['effective_at']);
+        $effectiveAt = Date::parse($data['effective_at']);
         $postedAt = filled($data['posted_at'] ?? null)
-            ? Carbon::parse($data['posted_at'])
+            ? Date::parse($data['posted_at'])
             : null;
 
         $updateData = UpdateLedgerTransactionData::from([
@@ -49,7 +50,7 @@ final class EditLedgerTransaction extends EditRecord
             'category_id' => $data['category_id'] ?? null,
         ]);
 
-        $action = app(UpdateLedgerTransactionAction::class);
+        $action = resolve(UpdateLedgerTransactionAction::class);
         $action->execute($user, $record, $updateData);
 
         return $record->fresh();

@@ -17,7 +17,7 @@ final class BudgetPeriodForDateQueryService
             ->where('budget_id', $budgetId)
             ->whereDate('start_at', '<=', $anchor)
             ->whereDate('end_at', '>', $anchor)
-            ->orderByDesc('start_at')
+            ->latest('start_at')
             ->first();
     }
 }

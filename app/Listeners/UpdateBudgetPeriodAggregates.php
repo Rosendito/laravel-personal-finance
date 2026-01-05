@@ -9,10 +9,10 @@ use App\Events\LedgerTransactionCreated;
 use App\Events\LedgerTransactionUpdated;
 use App\Models\Budget;
 
-final class UpdateBudgetPeriodAggregates
+final readonly class UpdateBudgetPeriodAggregates
 {
     public function __construct(
-        private readonly UpdateBudgetPeriodAggregatesAction $updateAggregatesAction,
+        private UpdateBudgetPeriodAggregatesAction $updateAggregatesAction,
     ) {}
 
     public function handle(LedgerTransactionCreated|LedgerTransactionUpdated $event): void

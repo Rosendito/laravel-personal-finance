@@ -9,10 +9,10 @@ use App\Exceptions\LedgerIntegrityException;
 use App\Models\LedgerAccount;
 use App\Models\User;
 
-final class ResolveFundamentalAccount
+final readonly class ResolveFundamentalAccount
 {
     public function __construct(
-        private readonly EnsureFundamentalAccounts $ensureFundamentalAccounts,
+        private EnsureFundamentalAccounts $ensureFundamentalAccounts,
     ) {}
 
     public function execute(User $user, string $currencyCode, LedgerAccountType $type): LedgerAccount

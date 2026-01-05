@@ -14,9 +14,9 @@ final class BudgetPeriodSpentQueryService
     public function total(BudgetPeriod $period): string
     {
         $categoryIds = DB::table('categories')
-            ->where(function ($query) use ($period) {
+            ->where(function ($query) use ($period): void {
                 $query->where('budget_id', $period->budget_id)
-                    ->orWhereIn('parent_id', function ($subQuery) use ($period) {
+                    ->orWhereIn('parent_id', function ($subQuery) use ($period): void {
                         $subQuery->select('id')
                             ->from('categories')
                             ->where('budget_id', $period->budget_id);

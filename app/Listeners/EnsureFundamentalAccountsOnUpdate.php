@@ -7,10 +7,10 @@ namespace App\Listeners;
 use App\Actions\EnsureFundamentalAccounts;
 use App\Events\LedgerAccountUpdated;
 
-final class EnsureFundamentalAccountsOnUpdate
+final readonly class EnsureFundamentalAccountsOnUpdate
 {
     public function __construct(
-        private readonly EnsureFundamentalAccounts $ensureFundamentalAccounts,
+        private EnsureFundamentalAccounts $ensureFundamentalAccounts,
     ) {}
 
     public function handle(LedgerAccountUpdated $event): void

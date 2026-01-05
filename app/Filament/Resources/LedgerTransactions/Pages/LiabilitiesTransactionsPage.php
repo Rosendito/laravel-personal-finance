@@ -23,9 +23,7 @@ final class LiabilitiesTransactionsPage extends ListRecords
     public function table(Table $table): Table
     {
         return LiabilitiesTransactionsTable::configure($table)
-            ->modifyQueryUsing(function (Builder $query): Builder {
-                return $this->configureTableQuery($query);
-            });
+            ->modifyQueryUsing($this->configureTableQuery(...));
     }
 
     protected function getHeaderActions(): array
@@ -45,11 +43,9 @@ final class LiabilitiesTransactionsPage extends ListRecords
 
     private function configureTableQuery(Builder $query): Builder
     {
-        return $query->whereHas('entries.account', function (Builder $query): Builder {
-            return $query->whereIn('subtype', [
-                LedgerAccountSubType::LOAN_PAYABLE,
-                LedgerAccountSubType::LOAN_RECEIVABLE,
-            ]);
-        });
+        return $query->whereHas('entries.account', fn (Builder $query): Builder => $query->whereIn('subtype', [
+            LedgerAccountSubType::LOAN_PAYABLE,
+            LedgerAccountSubType::LOAN_RECEIVABLE,
+        ]));
     }
 }

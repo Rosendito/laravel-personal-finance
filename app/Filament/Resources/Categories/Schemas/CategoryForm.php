@@ -27,7 +27,7 @@ final class CategoryForm
                     ->description('Organiza tus categorías y asigna presupuestos opcionales.')
                     ->schema([
                         Hidden::make('user_id')
-                            ->default(static fn(): ?int => Auth::id())
+                            ->default(static fn (): ?int => Auth::id())
                             ->required(),
                         TextInput::make('name')
                             ->label('Nombre')
@@ -37,9 +37,7 @@ final class CategoryForm
                             ->maxLength(255)
                             ->unique(
                                 ignoreRecord: true,
-                                modifyRuleUsing: static function (Unique $rule): Unique {
-                                    return $rule->where('user_id', Auth::id() ?? 0);
-                                }
+                                modifyRuleUsing: static fn (Unique $rule): Unique => $rule->where('user_id', Auth::id() ?? 0)
                             ),
                         Select::make('type')
                             ->label('Tipo')
@@ -86,7 +84,7 @@ final class CategoryForm
                                         $query->where('type', $type);
                                     }
 
-                                    if ($record !== null) {
+                                    if ($record instanceof Category) {
                                         $query->whereKeyNot($record->getKey());
                                     }
 
@@ -100,7 +98,7 @@ final class CategoryForm
                             ->nullable()
                             ->helperText('Agrupa categorías jerárquicamente.')
                             ->disableOptionWhen(static function (int|string $value, $label, ?Category $record): bool {
-                                if ($record === null) {
+                                if (! $record instanceof Category) {
                                     return false;
                                 }
 

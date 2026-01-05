@@ -32,21 +32,21 @@ final class BudgetPeriod extends Model
         return $this->hasMany(LedgerTransaction::class);
     }
 
-    public function spentAmount(): Attribute
+    protected function spentAmount(): Attribute
     {
         return Attribute::make(
             get: fn (): string => $this->resolveSpentAmount(),
         );
     }
 
-    public function remainingAmount(): Attribute
+    protected function remainingAmount(): Attribute
     {
         return Attribute::make(
             get: fn (): string => bcsub($this->amount, $this->resolveSpentAmount(), 6),
         );
     }
 
-    public function usagePercent(): Attribute
+    protected function usagePercent(): Attribute
     {
         return Attribute::make(
             get: function (): string {
@@ -63,7 +63,7 @@ final class BudgetPeriod extends Model
         );
     }
 
-    public function rangeLabel(): Attribute
+    protected function rangeLabel(): Attribute
     {
         return Attribute::make(
             get: function (): string {

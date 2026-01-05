@@ -13,11 +13,11 @@ use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Services\LedgerTransactionService;
 
-final class RegisterIncomeAction
+final readonly class RegisterIncomeAction
 {
     public function __construct(
-        private readonly LedgerTransactionService $ledgerTransactionService,
-        private readonly ResolveFundamentalAccount $resolveFundamentalAccount,
+        private LedgerTransactionService $ledgerTransactionService,
+        private ResolveFundamentalAccount $resolveFundamentalAccount,
     ) {}
 
     public function execute(User $user, RegisterIncomeData $data): LedgerTransaction

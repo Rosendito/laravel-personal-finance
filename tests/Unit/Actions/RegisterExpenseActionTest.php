@@ -8,12 +8,14 @@ use App\Enums\LedgerAccountType;
 use App\Exceptions\LedgerIntegrityException;
 use App\Models\Category;
 use App\Models\LedgerAccount;
+use App\Models\LedgerEntry;
+use App\Models\LedgerTransaction;
 use App\Models\User;
 use Illuminate\Support\Facades\Date;
 
 describe(RegisterExpenseAction::class, function (): void {
     beforeEach(function (): void {
-        $this->action = app(RegisterExpenseAction::class);
+        $this->action = resolve(RegisterExpenseAction::class);
         $this->user = User::factory()->create();
 
         $this->paymentAccount = LedgerAccount::factory()
@@ -30,9 +32,9 @@ describe(RegisterExpenseAction::class, function (): void {
 
     it('creates a transaction debiting the fundamental expense account', function (): void {
         // Fund the account first
-        App\Models\LedgerEntry::factory()
+        LedgerEntry::factory()
             ->for($this->paymentAccount, 'account')
-            ->for(App\Models\LedgerTransaction::factory()->create(['user_id' => $this->user->id]), 'transaction')
+            ->for(LedgerTransaction::factory()->create(['user_id' => $this->user->id]), 'transaction')
             ->create(['amount' => 1000, 'currency_code' => 'USD']);
 
         /** @var RegisterExpenseAction $action */

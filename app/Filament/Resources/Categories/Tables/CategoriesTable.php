@@ -34,12 +34,12 @@ final class CategoriesTable
                 TextColumn::make('type')
                     ->label('Tipo')
                     ->badge()
-                    ->formatStateUsing(static fn(?CategoryType $state): string => match ($state) {
+                    ->formatStateUsing(static fn (?CategoryType $state): string => match ($state) {
                         CategoryType::Income => 'Ingreso',
                         CategoryType::Expense => 'Gasto',
                         default => 'Desconocido',
                     })
-                    ->color(static fn(?CategoryType $state): string => match ($state) {
+                    ->color(static fn (?CategoryType $state): string => match ($state) {
                         CategoryType::Income => 'success',
                         CategoryType::Expense => 'warning',
                         default => 'gray',
@@ -72,7 +72,7 @@ final class CategoriesTable
                 TextColumn::make('entries_count')
                     ->label('Movimientos')
                     ->counts('entries')
-                    ->formatStateUsing(static fn(?int $state): string => (string) ($state ?? 0))
+                    ->formatStateUsing(static fn (?int $state): string => (string) ($state ?? 0))
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 IconColumn::make('is_archived')

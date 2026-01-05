@@ -8,10 +8,10 @@ use App\Enums\CachedAggregateKey;
 use App\Models\BudgetPeriod;
 use App\Services\Queries\BudgetPeriodSpentQueryService;
 
-final class UpdateBudgetPeriodAggregatesAction
+final readonly class UpdateBudgetPeriodAggregatesAction
 {
     public function __construct(
-        private readonly BudgetPeriodSpentQueryService $spentQuery,
+        private BudgetPeriodSpentQueryService $spentQuery,
     ) {}
 
     public function execute(BudgetPeriod $period): void

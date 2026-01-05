@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Date;
 
 describe(RegisterIncomeAction::class, function (): void {
     beforeEach(function (): void {
-        $this->action = app(RegisterIncomeAction::class);
+        $this->action = resolve(RegisterIncomeAction::class);
         $this->user = User::factory()->create();
 
         $this->depositAccount = LedgerAccount::factory()

@@ -11,9 +11,9 @@ final class DebtLoanStat extends Stat
 {
     protected string $view = 'filament.resources.ledger-transactions.widgets.debt-loan-stat';
 
-    protected ?string $accountId = null;
+    private ?string $accountId = null;
 
-    protected ?string $actionName = null;
+    private ?string $actionName = null;
 
     public static function make(string|Htmlable $label, $value): static
     {

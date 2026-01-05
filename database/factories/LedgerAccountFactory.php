@@ -25,7 +25,7 @@ final class LedgerAccountFactory extends Factory
     {
         $type = fake()->randomElement(LedgerAccountType::cases());
         $subtypes = $type->subtypes();
-        $subtype = ! empty($subtypes) ? fake()->randomElement($subtypes) : null;
+        $subtype = empty($subtypes) ? null : fake()->randomElement($subtypes);
 
         return [
             'user_id' => User::factory(),

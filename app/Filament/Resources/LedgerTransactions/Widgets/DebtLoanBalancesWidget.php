@@ -55,10 +55,10 @@ final class DebtLoanBalancesWidget extends StatsOverviewWidget implements HasAct
         }
 
         /** @var Collection<int, AccountBalanceData> $allBalances */
-        $allBalances = app(AccountBalanceQueryService::class)
+        $allBalances = resolve(AccountBalanceQueryService::class)
             ->totalsForUser($user)
             ->filter(static function (AccountBalanceData $balance): bool {
-                if ($balance->is_fundamental === true) {
+                if ($balance->is_fundamental) {
                     return false;
                 }
 
@@ -89,16 +89,14 @@ final class DebtLoanBalancesWidget extends StatsOverviewWidget implements HasAct
         if ($receivables->isNotEmpty()) {
             $receivablesStats = $receivables
                 ->map(
-                    function (AccountBalanceData $balance): Stat {
-                        return DebtLoanStat::make(
-                            $balance->name,
-                            MoneyFormatter::format($balance->balance, $balance->currency_code),
-                        )
-                            ->color('success')
-                            ->icon('heroicon-m-arrow-down-circle')
-                            ->accountId($balance->account_id)
-                            ->actionName('collectLoan');
-                    },
+                    fn (AccountBalanceData $balance): Stat => DebtLoanStat::make(
+                        $balance->name,
+                        MoneyFormatter::format($balance->balance, $balance->currency_code),
+                    )
+                        ->color('success')
+                        ->icon('heroicon-m-arrow-down-circle')
+                        ->accountId($balance->account_id)
+                        ->actionName('collectLoan'),
                 )
                 ->values()
                 ->all();
@@ -109,16 +107,14 @@ final class DebtLoanBalancesWidget extends StatsOverviewWidget implements HasAct
         if ($payables->isNotEmpty()) {
             $payablesStats = $payables
                 ->map(
-                    function (AccountBalanceData $balance): Stat {
-                        return DebtLoanStat::make(
-                            $balance->name,
-                            MoneyFormatter::format($balance->balance, $balance->currency_code),
-                        )
-                            ->color('danger')
-                            ->icon('heroicon-m-arrow-up-circle')
-                            ->accountId($balance->account_id)
-                            ->actionName('payDebt');
-                    },
+                    fn (AccountBalanceData $balance): Stat => DebtLoanStat::make(
+                        $balance->name,
+                        MoneyFormatter::format($balance->balance, $balance->currency_code),
+                    )
+                        ->color('danger')
+                        ->icon('heroicon-m-arrow-up-circle')
+                        ->accountId($balance->account_id)
+                        ->actionName('payDebt'),
                 )
                 ->values()
                 ->all();
@@ -126,7 +122,7 @@ final class DebtLoanBalancesWidget extends StatsOverviewWidget implements HasAct
             $stats = [...$stats, ...$payablesStats];
         }
 
-        if (empty($stats)) {
+        if ($stats === []) {
             return [
                 Stat::make('Préstamos y Deudas', 'Sin datos')
                     ->description('No hay cuentas de préstamos o deudas registradas')

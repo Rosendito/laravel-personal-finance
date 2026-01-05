@@ -7,14 +7,14 @@ namespace App\Actions\Currencies;
 use App\Data\Currencies\ExchangeRateData;
 use Illuminate\Support\Facades\Cache;
 
-final class FetchUsdtVesRateAction
+final readonly class FetchUsdtVesRateAction
 {
-    private const CACHE_KEY_PREFIX = 'usdt_ves_rate';
+    private const string CACHE_KEY_PREFIX = 'usdt_ves_rate';
 
-    private const CACHE_TTL = 300;
+    private const int CACHE_TTL = 300;
 
     public function __construct(
-        private readonly FetchBinanceRateAction $fetchBinanceRateAction,
+        private FetchBinanceRateAction $fetchBinanceRateAction,
     ) {}
 
     public function execute(
@@ -28,9 +28,7 @@ final class FetchUsdtVesRateAction
 
         $cacheKey = $this->buildCacheKey($transAmount, $rows);
 
-        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($transAmount, $rows): ExchangeRateData {
-            return $this->fetchRate($transAmount, $rows);
-        });
+        return Cache::remember($cacheKey, self::CACHE_TTL, fn (): ExchangeRateData => $this->fetchRate($transAmount, $rows));
     }
 
     private function fetchRate(int|float|string $transAmount, int $rows): ExchangeRateData

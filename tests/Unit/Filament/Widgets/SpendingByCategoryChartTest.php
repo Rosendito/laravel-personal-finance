@@ -29,14 +29,12 @@ describe(SpendingByCategoryChart::class, function (): void {
             new CategoryTotalData(categoryId: null, name: 'Sin categoría', total: '50.00'),
         ]);
 
-        $widget = app(SpendingByCategoryChart::class);
+        $widget = resolve(SpendingByCategoryChart::class);
 
         $totalsCacheProperty = new ReflectionProperty($widget, 'totalsCache');
-        $totalsCacheProperty->setAccessible(true);
         $totalsCacheProperty->setValue($widget, $totals);
 
         $getDataMethod = new ReflectionMethod($widget, 'getData');
-        $getDataMethod->setAccessible(true);
 
         /** @var array{datasets: array<int, array{data: array<int, float>}>, labels: array<int, string>} $data */
         $data = $getDataMethod->invoke($widget);

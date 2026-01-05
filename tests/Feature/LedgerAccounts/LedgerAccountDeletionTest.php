@@ -14,7 +14,7 @@ describe('LedgerAccount Deletion', function (): void {
         $user = User::factory()->create();
 
         // Get an existing fundamental account (created by InitializeUserSpace)
-        $fundamentalAccount = LedgerAccount::where('user_id', $user->id)
+        $fundamentalAccount = LedgerAccount::query()->where('user_id', $user->id)
             ->where('is_fundamental', true)
             ->first();
 
@@ -59,7 +59,7 @@ describe('LedgerAccount Deletion', function (): void {
             ->create();
 
         expect($account->delete())->toBeTrue()
-            ->and(LedgerAccount::find($account->id))->toBeNull();
+            ->and(LedgerAccount::query()->find($account->id))->toBeNull();
     });
 
     it('prevents deletion of accounts marked as fundamental', function (): void {

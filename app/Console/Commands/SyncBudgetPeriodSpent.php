@@ -33,7 +33,7 @@ final class SyncBudgetPeriodSpent extends Command
 
     private function syncSinglePeriod(int $periodId): int
     {
-        $period = BudgetPeriod::find($periodId);
+        $period = BudgetPeriod::query()->find($periodId);
 
         if ($period === null) {
             $this->error("Budget period with ID {$periodId} not found.");

@@ -69,8 +69,8 @@ final class SpendingByCategoryChart extends ChartWidget
                 'labels' => ['Sin datos'],
             ];
         }
-        $labels = $totals->map(static fn ($row) => $row->name)->all();
-        $data = $totals->map(static fn ($row) => (float) $row->total)->all();
+        $labels = $totals->map(static fn ($row): string => $row->name)->all();
+        $data = $totals->map(static fn ($row): float => (float) $row->total)->all();
         $colors = $this->resolveColors($totals->all());
 
         return [
@@ -113,7 +113,7 @@ final class SpendingByCategoryChart extends ChartWidget
      */
     private function totals(User $user): Collection
     {
-        if ($this->totalsCache !== null) {
+        if ($this->totalsCache instanceof Collection) {
             /** @var Collection<int, CategoryTotalData> $totals */
             $totals = $this->totalsCache;
 
@@ -123,7 +123,7 @@ final class SpendingByCategoryChart extends ChartWidget
         [$start, $end] = $this->dateRange();
 
         /** @var Collection<int, CategoryTotalData> $totals */
-        $totals = app(DashboardSpendingByCategoryQueryService::class)->totals($user, $start, $end);
+        $totals = resolve(DashboardSpendingByCategoryQueryService::class)->totals($user, $start, $end);
 
         $this->totalsCache = $totals;
 

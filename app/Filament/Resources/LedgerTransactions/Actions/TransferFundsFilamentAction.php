@@ -13,8 +13,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
 
 final class TransferFundsFilamentAction
 {
@@ -59,8 +59,8 @@ final class TransferFundsFilamentAction
                             return false;
                         }
 
-                        $fromAccount = LedgerAccount::find($fromId);
-                        $toAccount = LedgerAccount::find($toId);
+                        $fromAccount = LedgerAccount::query()->find($fromId);
+                        $toAccount = LedgerAccount::query()->find($toId);
 
                         if (! $fromAccount || ! $toAccount) {
                             return false;
@@ -76,8 +76,8 @@ final class TransferFundsFilamentAction
                             return false;
                         }
 
-                        $fromAccount = LedgerAccount::find($fromId);
-                        $toAccount = LedgerAccount::find($toId);
+                        $fromAccount = LedgerAccount::query()->find($fromId);
+                        $toAccount = LedgerAccount::query()->find($toId);
 
                         if (! $fromAccount || ! $toAccount) {
                             return false;
@@ -103,9 +103,9 @@ final class TransferFundsFilamentAction
                     return;
                 }
 
-                $effectiveAt = Carbon::parse($data['effective_at']);
+                $effectiveAt = Date::parse($data['effective_at']);
                 $postedAt = filled($data['posted_at'] ?? null)
-                    ? Carbon::parse($data['posted_at'])
+                    ? Date::parse($data['posted_at'])
                     : null;
 
                 $transferFundsData = TransferFundsData::from([
@@ -122,7 +122,7 @@ final class TransferFundsFilamentAction
                     'source' => 'manual',
                 ]);
 
-                $action = app(TransferFundsAction::class);
+                $action = resolve(TransferFundsAction::class);
                 $action->execute($user, $transferFundsData);
 
                 Notification::make()

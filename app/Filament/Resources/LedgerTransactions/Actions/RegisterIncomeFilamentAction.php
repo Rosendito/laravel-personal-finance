@@ -14,8 +14,8 @@ use App\Models\LedgerAccount;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
 
 final class RegisterIncomeFilamentAction
 {
@@ -81,9 +81,9 @@ final class RegisterIncomeFilamentAction
                     return;
                 }
 
-                $effectiveAt = Carbon::parse($data['effective_at']);
+                $effectiveAt = Date::parse($data['effective_at']);
                 $postedAt = filled($data['posted_at'] ?? null)
-                    ? Carbon::parse($data['posted_at'])
+                    ? Date::parse($data['posted_at'])
                     : null;
 
                 $registerIncomeData = RegisterIncomeData::from([
@@ -99,7 +99,7 @@ final class RegisterIncomeFilamentAction
                     'source' => 'manual',
                 ]);
 
-                $action = app(RegisterIncomeAction::class);
+                $action = resolve(RegisterIncomeAction::class);
                 $action->execute($user, $registerIncomeData);
 
                 Notification::make()

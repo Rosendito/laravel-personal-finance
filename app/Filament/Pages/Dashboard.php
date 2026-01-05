@@ -56,9 +56,7 @@ final class Dashboard extends BaseDashboard
                             ->action(function (Set $set): void {
                                 $this->setMonthRange($set, $this->nowMonthStart());
                             })
-                            ->disabled(function (Get $get): bool {
-                                return $this->selectedMonthStart($get)->equalTo($this->nowMonthStart());
-                            }),
+                            ->disabled(fn (Get $get): bool => $this->selectedMonthStart($get)->equalTo($this->nowMonthStart())),
                         Action::make('next_month')
                             ->label('Mes siguiente')
                             ->color('gray')

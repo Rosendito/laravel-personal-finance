@@ -12,10 +12,10 @@ use App\Models\User;
 use App\Services\LedgerTransactionService;
 use Illuminate\Support\Facades\DB;
 
-final class UpdateLedgerTransactionAction
+final readonly class UpdateLedgerTransactionAction
 {
     public function __construct(
-        private readonly LedgerTransactionService $ledgerTransactionService,
+        private LedgerTransactionService $ledgerTransactionService,
     ) {}
 
     public function execute(User $user, LedgerTransaction $transaction, UpdateLedgerTransactionData $data): LedgerTransaction

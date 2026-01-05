@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Date;
 describe(LedgerEntry::class, function (): void {
     beforeEach(function (): void {
         // Currency 'USD' created by global setup
-        $this->currency = Currency::where('code', 'USD')->firstOrFail();
+        $this->currency = Currency::query()->where('code', 'USD')->firstOrFail();
 
         $this->user = User::factory()->create();
 

@@ -36,9 +36,7 @@ final class LedgerAccountForm
                             ->maxLength(255)
                             ->unique(
                                 ignoreRecord: true,
-                                modifyRuleUsing: static function (Unique $rule): Unique {
-                                    return $rule->where('user_id', Auth::id() ?? 0);
-                                }
+                                modifyRuleUsing: static fn (Unique $rule): Unique => $rule->where('user_id', Auth::id() ?? 0)
                             ),
                         Select::make('type')
                             ->label('Tipo')
@@ -63,9 +61,7 @@ final class LedgerAccountForm
                             ->relationship(
                                 name: 'currency',
                                 titleAttribute: 'code',
-                                modifyQueryUsing: static function (Builder $query): Builder {
-                                    return $query->orderBy('code');
-                                }
+                                modifyQueryUsing: static fn (Builder $query): Builder => $query->orderBy('code')
                             )
                             ->default(static fn (): string => config('finance.currency.default'))
                             ->searchable()
@@ -105,7 +101,7 @@ final class LedgerAccountForm
      */
     private static function subtypeOptions(?LedgerAccountType $type): array
     {
-        if ($type === null) {
+        if (! $type instanceof LedgerAccountType) {
             return [];
         }
 
@@ -129,10 +125,10 @@ final class LedgerAccountForm
 
     private static function hasSubtypes(?LedgerAccountType $type): bool
     {
-        if ($type === null) {
+        if (! $type instanceof LedgerAccountType) {
             return false;
         }
 
-        return ! empty($type->subtypes());
+        return $type->subtypes() !== [];
     }
 }

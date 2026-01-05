@@ -39,7 +39,7 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
 
     private function getBcvStat(): Stat
     {
-        if ($this->bcv === null) {
+        if (! $this->bcv instanceof ExchangeRateData) {
             return Stat::make('BCV (USD/VES)', 'N/A')
                 ->color('gray');
         }
@@ -52,7 +52,7 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
 
     private function getUsdtVesStat(): Stat
     {
-        if ($this->binance === null) {
+        if (! $this->binance instanceof ExchangeRateData) {
             return Stat::make('Binance P2P (USDT/VES)', 'N/A')
                 ->color('gray');
         }
@@ -65,7 +65,7 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
 
     private function getBcvPercentageStat(): Stat
     {
-        if ($this->bcv === null || $this->binance === null) {
+        if (! $this->bcv instanceof ExchangeRateData || ! $this->binance instanceof ExchangeRateData) {
             return Stat::make('BCV como % de P2P', 'N/A')
                 ->color('gray');
         }

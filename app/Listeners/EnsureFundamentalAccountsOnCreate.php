@@ -7,10 +7,10 @@ namespace App\Listeners;
 use App\Actions\EnsureFundamentalAccounts;
 use App\Events\LedgerAccountCreated;
 
-final class EnsureFundamentalAccountsOnCreate
+final readonly class EnsureFundamentalAccountsOnCreate
 {
     public function __construct(
-        private readonly EnsureFundamentalAccounts $ensureFundamentalAccounts,
+        private EnsureFundamentalAccounts $ensureFundamentalAccounts,
     ) {}
 
     public function handle(LedgerAccountCreated $event): void

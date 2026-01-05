@@ -9,7 +9,7 @@ use App\Helpers\MoneyFormatter;
 use App\Models\LedgerTransaction;
 use App\Services\Queries\DashboardRecentTransactionsQueryService;
 use Carbon\CarbonImmutable;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -39,20 +39,20 @@ final class RecentTransactionsTable extends BaseWidget
         [$start, $end] = $this->dateRange();
         $currency = config('finance.currency.default', 'USD');
 
-        $recent = app(DashboardRecentTransactionsQueryService::class)
+        $recent = resolve(DashboardRecentTransactionsQueryService::class)
             ->recent($user, $start, $end, 15);
 
         $this->recentById = $recent
-            ->keyBy(static fn (RecentTransactionData $data) => (int) $data->transactionId)
+            ->keyBy(static fn (RecentTransactionData $data): int => (int) $data->transactionId)
             ->all();
 
         $transactionIds = array_keys($this->recentById);
 
-        if (empty($transactionIds)) {
+        if ($transactionIds === []) {
             return $table
                 ->query(LedgerTransaction::query()->whereRaw('1 = 0'))
                 ->columns([
-                    Tables\Columns\TextColumn::make('empty')
+                    TextColumn::make('empty')
                         ->label('Sin transacciones en el rango'),
                 ])
                 ->paginated(false);
@@ -63,20 +63,20 @@ final class RecentTransactionsTable extends BaseWidget
                 LedgerTransaction::query()
                     ->with(['category', 'budgetPeriod'])
                     ->whereIn('id', $transactionIds)
-                    ->orderByDesc('effective_at')
+                    ->latest('effective_at')
                     ->orderByDesc('id')
             )
             ->columns([
-                Tables\Columns\TextColumn::make('effective_at')
+                TextColumn::make('effective_at')
                     ->label('Fecha')
                     ->date(),
-                Tables\Columns\TextColumn::make('description')
+                TextColumn::make('description')
                     ->label('Descripción')
                     ->wrap(),
-                Tables\Columns\TextColumn::make('category.name')
+                TextColumn::make('category.name')
                     ->label('Categoría')
                     ->placeholder('Sin categoría'),
-                Tables\Columns\TextColumn::make('budgetPeriod')
+                TextColumn::make('budgetPeriod')
                     ->label('Periodo presupuesto')
                     ->state(function (LedgerTransaction $transaction): ?string {
                         $data = $this->recentById[$transaction->id] ?? null;
@@ -84,14 +84,14 @@ final class RecentTransactionsTable extends BaseWidget
                         return $data?->budgetPeriodLabel;
                     })
                     ->placeholder('—'),
-                Tables\Columns\TextColumn::make('expense')
+                TextColumn::make('expense')
                     ->label('Gasto')
                     ->state(function (LedgerTransaction $transaction) use ($currency): string {
                         $data = $this->recentById[$transaction->id] ?? null;
 
                         return MoneyFormatter::format($data?->expenseAmount ?? '0', $currency);
                     }),
-                Tables\Columns\TextColumn::make('income')
+                TextColumn::make('income')
                     ->label('Ingreso')
                     ->state(function (LedgerTransaction $transaction) use ($currency): string {
                         $data = $this->recentById[$transaction->id] ?? null;

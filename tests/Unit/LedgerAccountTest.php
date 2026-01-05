@@ -18,9 +18,9 @@ describe(LedgerAccount::class, function (): void {
         $user = User::factory()->create();
 
         // Check default accounts exist
-        expect(LedgerAccount::where('user_id', $user->id)->where('currency_code', 'USD')->count())
+        expect(LedgerAccount::query()->where('user_id', $user->id)->where('currency_code', 'USD')->count())
             ->toBe(2) // Expense + Income
-            ->and(LedgerAccount::where('user_id', $user->id)->where('currency_code', 'EUR')->count())
+            ->and(LedgerAccount::query()->where('user_id', $user->id)->where('currency_code', 'EUR')->count())
             ->toBe(0); // No EUR yet
 
         // 3. Action: Create a new Asset Account in EUR
@@ -31,12 +31,12 @@ describe(LedgerAccount::class, function (): void {
             ->create();
 
         // 4. Assert: Fundamental EUR accounts should have been created automatically by the Observer
-        $eurExpenses = LedgerAccount::where('user_id', $user->id)
+        $eurExpenses = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'EUR')
             ->where('type', LedgerAccountType::EXPENSE)
             ->first();
 
-        $eurIncome = LedgerAccount::where('user_id', $user->id)
+        $eurIncome = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'EUR')
             ->where('type', LedgerAccountType::INCOME)
             ->first();
@@ -52,7 +52,7 @@ describe(LedgerAccount::class, function (): void {
         $user = User::factory()->create();
 
         // USD accounts created on user creation.
-        $countBefore = LedgerAccount::where('user_id', $user->id)->count();
+        $countBefore = LedgerAccount::query()->where('user_id', $user->id)->count();
 
         // Create an asset account in USD -> Should trigger observer, but find existing accounts
         LedgerAccount::factory()
@@ -62,7 +62,7 @@ describe(LedgerAccount::class, function (): void {
             ->create();
 
         // Count should increase by exactly 1 (the new asset account), not 3 (re-creating fundamentals)
-        expect(LedgerAccount::where('user_id', $user->id)->count())->toBe($countBefore + 1);
+        expect(LedgerAccount::query()->where('user_id', $user->id)->count())->toBe($countBefore + 1);
     });
 
     it('respects configured default currency', function (): void {
@@ -78,7 +78,7 @@ describe(LedgerAccount::class, function (): void {
         $user = User::factory()->create();
 
         // Verificar que se crearon cuentas USDT
-        expect(LedgerAccount::where('user_id', $user->id)->where('currency_code', 'USDT')->count())
+        expect(LedgerAccount::query()->where('user_id', $user->id)->where('currency_code', 'USDT')->count())
             ->toBe(2);
     });
 })->skip();

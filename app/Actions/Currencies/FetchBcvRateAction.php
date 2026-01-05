@@ -12,13 +12,13 @@ use Symfony\Component\DomCrawler\Crawler;
 
 final class FetchBcvRateAction
 {
-    private const CACHE_KEY = 'bcv_rate';
+    private const string CACHE_KEY = 'bcv_rate';
 
-    private const CACHE_TTL = 3600;
+    private const int CACHE_TTL = 3600;
 
-    private const BCV_URL = 'https://www.bcv.org.ve/';
+    private const string BCV_URL = 'https://www.bcv.org.ve/';
 
-    private const RATE_SELECTOR = '#dolar strong';
+    private const string RATE_SELECTOR = '#dolar strong';
 
     public function execute(bool $force = false): ExchangeRateData
     {
@@ -26,9 +26,7 @@ final class FetchBcvRateAction
             return $this->fetchRate();
         }
 
-        return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function (): ExchangeRateData {
-            return $this->fetchRate();
-        });
+        return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, $this->fetchRate(...));
     }
 
     private function fetchRate(): ExchangeRateData
@@ -59,14 +57,11 @@ final class FetchBcvRateAction
         $crawler = new Crawler($html);
         $node = $crawler->filter(self::RATE_SELECTOR);
 
-        if ($node->count() === 0) {
-            throw new RuntimeException('No BCV rate found on the page.');
-        }
+        throw_if($node->count() === 0, RuntimeException::class, 'No BCV rate found on the page.');
 
         $rateString = mb_trim($node->text());
-        $rate = $this->parseRateString($rateString);
 
-        return $rate;
+        return $this->parseRateString($rateString);
     }
 
     private function parseRateString(string $rateString): float
@@ -75,9 +70,7 @@ final class FetchBcvRateAction
         // Replace dots (thousands separator) with empty, then comma (decimal) with dot
         $normalized = str_replace(['.', ','], ['', '.'], $rateString);
 
-        if (! is_numeric($normalized)) {
-            throw new RuntimeException("Could not parse BCV rate: {$rateString}");
-        }
+        throw_unless(is_numeric($normalized), RuntimeException::class, "Could not parse BCV rate: {$rateString}");
 
         return (float) $normalized;
     }

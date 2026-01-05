@@ -80,7 +80,7 @@ final class SampleLedgerSeeder extends Seeder
         $this->createEntry($creditCardPayment, $creditCardAccount, amount: -400.00, currency: $usd->code);
         $this->createEntry($creditCardPayment, $checkingAccount, amount: 400.00, currency: $usd->code);
 
-        $spent = app(BudgetPeriodSpentQueryService::class)->total($budgetPeriod->fresh());
+        $spent = resolve(BudgetPeriodSpentQueryService::class)->total($budgetPeriod->fresh());
 
         $budgetPeriod->upsertCachedAggregate(
             CachedAggregateKey::Spent,

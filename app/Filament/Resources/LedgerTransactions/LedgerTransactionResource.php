@@ -61,7 +61,7 @@ final class LedgerTransactionResource extends Resource
             NavigationItem::make(self::getNavigationLabel())
                 ->group(self::getNavigationGroup())
                 ->icon(self::getNavigationIcon())
-                ->isActiveWhen(fn () => request()->routeIs($routeBaseName.'.*') && ! request()->routeIs($routeBaseName.'.liabilities'))
+                ->isActiveWhen(fn (): bool => request()->routeIs($routeBaseName.'.*') && ! request()->routeIs($routeBaseName.'.liabilities'))
                 ->url(self::getUrl('index')),
 
             NavigationItem::make('Deudas y Préstamos')

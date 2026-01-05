@@ -30,7 +30,7 @@ final class CurrenciesRates extends Page
     public function getWidgetData(): array
     {
         try {
-            $bcvData = app(FetchBcvRateAction::class)->execute();
+            $bcvData = resolve(FetchBcvRateAction::class)->execute();
         } catch (Throwable $e) {
             return [
                 'bcv' => null,
@@ -41,7 +41,7 @@ final class CurrenciesRates extends Page
         }
 
         try {
-            $binanceData = app(FetchUsdtVesRateAction::class)->execute(transAmount: $this->transAmount, rows: 20);
+            $binanceData = resolve(FetchUsdtVesRateAction::class)->execute(transAmount: $this->transAmount, rows: 20);
         } catch (Throwable $e) {
             return [
                 'bcv' => $bcvData,

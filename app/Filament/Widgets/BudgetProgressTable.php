@@ -9,7 +9,7 @@ use App\Helpers\MoneyFormatter;
 use App\Models\Budget;
 use App\Services\Queries\DashboardBudgetProgressQueryService;
 use Carbon\CarbonImmutable;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -39,20 +39,20 @@ final class BudgetProgressTable extends BaseWidget
         [$start, $end] = $this->dateRange();
         $currency = config('finance.currency.default', 'USD');
 
-        $progress = app(DashboardBudgetProgressQueryService::class)
+        $progress = resolve(DashboardBudgetProgressQueryService::class)
             ->progress($user, $start, $end);
 
         $this->progressByBudget = $progress
-            ->keyBy(static fn (BudgetProgressData $data) => $data->budgetId)
+            ->keyBy(static fn (BudgetProgressData $data): int => $data->budgetId)
             ->all();
 
         $budgetIds = array_keys($this->progressByBudget);
 
-        if (empty($budgetIds)) {
+        if ($budgetIds === []) {
             return $table
                 ->query(Budget::query()->whereRaw('1 = 0'))
                 ->columns([
-                    Tables\Columns\TextColumn::make('empty')->label('Sin presupuestos en rango'),
+                    TextColumn::make('empty')->label('Sin presupuestos en rango'),
                 ])
                 ->paginated(false);
         }
@@ -64,30 +64,30 @@ final class BudgetProgressTable extends BaseWidget
                     ->orderBy('name')
             )
             ->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label('Presupuesto'),
-                Tables\Columns\TextColumn::make('period')
+                TextColumn::make('period')
                     ->label('Periodo')
                     ->state(fn (Budget $budget): string => $this->progressByBudget[$budget->id]->periodLabel),
-                Tables\Columns\TextColumn::make('amount')
+                TextColumn::make('amount')
                     ->label('Monto')
                     ->state(fn (Budget $budget): string => MoneyFormatter::format(
                         $this->progressByBudget[$budget->id]->amount,
                         $currency,
                     )),
-                Tables\Columns\TextColumn::make('spent')
+                TextColumn::make('spent')
                     ->label('Gastado')
                     ->state(fn (Budget $budget): string => MoneyFormatter::format(
                         $this->progressByBudget[$budget->id]->spent,
                         $currency,
                     )),
-                Tables\Columns\TextColumn::make('remaining')
+                TextColumn::make('remaining')
                     ->label('Restante')
                     ->state(fn (Budget $budget): string => MoneyFormatter::format(
                         $this->progressByBudget[$budget->id]->remaining,
                         $currency,
                     )),
-                Tables\Columns\TextColumn::make('usage')
+                TextColumn::make('usage')
                     ->label('% Uso')
                     ->state(fn (Budget $budget): string => sprintf('%.2f%%', (float) $this->progressByBudget[$budget->id]->usagePercent)),
             ])

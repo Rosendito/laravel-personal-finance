@@ -51,7 +51,7 @@ final class LedgerTransactionInfolist
                             ->listWithLineBreaks()
                             ->bulleted()
                             ->formatStateUsing(static function (?LedgerEntry $entry): string {
-                                if ($entry === null) {
+                                if (! $entry instanceof LedgerEntry) {
                                     return '';
                                 }
 

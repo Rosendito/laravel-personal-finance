@@ -13,10 +13,10 @@ use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Services\LedgerTransactionService;
 
-final class RegisterBorrowingAction
+final readonly class RegisterBorrowingAction
 {
     public function __construct(
-        private readonly LedgerTransactionService $ledgerTransactionService,
+        private LedgerTransactionService $ledgerTransactionService,
     ) {}
 
     public function execute(User $user, RegisterDebtData $data): LedgerTransaction
@@ -71,20 +71,12 @@ final class RegisterBorrowingAction
 
     private function validateLoanPayableAccount(LedgerAccount $account): void
     {
-        if ($account->subtype !== LedgerAccountSubType::LOAN_PAYABLE) {
-            throw new LedgerIntegrityException(
-                'Target account must be of type LOAN_PAYABLE.'
-            );
-        }
+        throw_if($account->subtype !== LedgerAccountSubType::LOAN_PAYABLE, LedgerIntegrityException::class, 'Target account must be of type LOAN_PAYABLE.');
     }
 
     private function validateLiquidAccount(LedgerAccount $account): void
     {
-        if ($account->subtype === null || ! $account->subtype->isLiquid()) {
-            throw new LedgerIntegrityException(
-                'Contra account must be a liquid asset (CASH, BANK, or WALLET).'
-            );
-        }
+        throw_if($account->subtype === null || ! $account->subtype->isLiquid(), LedgerIntegrityException::class, 'Contra account must be a liquid asset (CASH, BANK, or WALLET).');
     }
 
     private function validateCurrencyMatch(LedgerAccount $account1, LedgerAccount $account2): void

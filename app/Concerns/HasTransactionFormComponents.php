@@ -145,35 +145,33 @@ trait HasTransactionFormComponents
             ->step(0.01)
             ->live()
             ->rules([
-                function (Get $get) use ($accountFieldName) {
-                    return function (string $attribute, $value, Closure $fail) use ($get, $accountFieldName): void {
-                        $accountId = $get($accountFieldName);
+                fn (Get $get): Closure => function (string $attribute, $value, Closure $fail) use ($get, $accountFieldName): void {
+                    $accountId = $get($accountFieldName);
 
-                        if (! $accountId) {
-                            return;
-                        }
+                    if (! $accountId) {
+                        return;
+                    }
 
-                        $account = LedgerAccount::query()
-                            ->where('id', $accountId)
-                            ->withBalance()
-                            ->first();
+                    $account = LedgerAccount::query()
+                        ->where('id', $accountId)
+                        ->withBalance()
+                        ->first();
 
-                        if (! $account) {
-                            return;
-                        }
+                    if (! $account) {
+                        return;
+                    }
 
-                        $balance = $account->balance ?? 0;
-                        $amount = (float) $value;
+                    $balance = $account->balance ?? 0;
+                    $amount = (float) $value;
 
-                        if ($amount > $balance) {
-                            $formattedBalance = MoneyFormatter::format($balance, $account->currency_code ?? '');
+                    if ($amount > $balance) {
+                        $formattedBalance = MoneyFormatter::format($balance, $account->currency_code ?? '');
 
-                            $fail(sprintf(
-                                'El monto no puede ser mayor al balance disponible (%s).',
-                                $formattedBalance,
-                            ));
-                        }
-                    };
+                        $fail(sprintf(
+                            'El monto no puede ser mayor al balance disponible (%s).',
+                            $formattedBalance,
+                        ));
+                    }
                 },
             ]);
     }
@@ -206,7 +204,7 @@ trait HasTransactionFormComponents
                 }
 
                 $defaultCurrency = config('finance.currency.default');
-                $account = LedgerAccount::find($accountId);
+                $account = LedgerAccount::query()->find($accountId);
 
                 if (! $account) {
                     return false;
@@ -222,7 +220,7 @@ trait HasTransactionFormComponents
                 }
 
                 $defaultCurrency = config('finance.currency.default');
-                $account = LedgerAccount::find($accountId);
+                $account = LedgerAccount::query()->find($accountId);
 
                 if (! $account) {
                     return false;
@@ -250,8 +248,8 @@ trait HasTransactionFormComponents
                 }
 
                 $defaultCurrency = config('finance.currency.default');
-                $fromAccount = LedgerAccount::find($fromId);
-                $toAccount = LedgerAccount::find($toId);
+                $fromAccount = LedgerAccount::query()->find($fromId);
+                $toAccount = LedgerAccount::query()->find($toId);
 
                 if (! $fromAccount || ! $toAccount) {
                     return false;
@@ -269,8 +267,8 @@ trait HasTransactionFormComponents
                 }
 
                 $defaultCurrency = config('finance.currency.default');
-                $fromAccount = LedgerAccount::find($fromId);
-                $toAccount = LedgerAccount::find($toId);
+                $fromAccount = LedgerAccount::query()->find($fromId);
+                $toAccount = LedgerAccount::query()->find($toId);
 
                 if (! $fromAccount || ! $toAccount) {
                     return false;
@@ -301,8 +299,8 @@ trait HasTransactionFormComponents
                 }
 
                 $defaultCurrency = config('finance.currency.default');
-                $targetAccount = LedgerAccount::find($targetId);
-                $contraAccount = LedgerAccount::find($contraId);
+                $targetAccount = LedgerAccount::query()->find($targetId);
+                $contraAccount = LedgerAccount::query()->find($contraId);
 
                 if (! $targetAccount || ! $contraAccount) {
                     return false;
@@ -320,8 +318,8 @@ trait HasTransactionFormComponents
                 }
 
                 $defaultCurrency = config('finance.currency.default');
-                $targetAccount = LedgerAccount::find($targetId);
-                $contraAccount = LedgerAccount::find($contraId);
+                $targetAccount = LedgerAccount::query()->find($targetId);
+                $contraAccount = LedgerAccount::query()->find($contraId);
 
                 if (! $targetAccount || ! $contraAccount) {
                     return false;

@@ -7,10 +7,10 @@ namespace App\Observers;
 use App\Actions\InitializeUserSpace;
 use App\Models\User;
 
-final class UserObserver
+final readonly class UserObserver
 {
     public function __construct(
-        private readonly InitializeUserSpace $initializeUserSpace,
+        private InitializeUserSpace $initializeUserSpace,
     ) {}
 
     /**

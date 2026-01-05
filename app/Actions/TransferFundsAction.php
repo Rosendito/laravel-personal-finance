@@ -13,11 +13,11 @@ use App\Models\User;
 use App\Services\LedgerTransactionService;
 use App\Services\Queries\AccountBalanceQueryService;
 
-final class TransferFundsAction
+final readonly class TransferFundsAction
 {
     public function __construct(
-        private readonly LedgerTransactionService $ledgerTransactionService,
-        private readonly AccountBalanceQueryService $accountBalanceQuery,
+        private LedgerTransactionService $ledgerTransactionService,
+        private AccountBalanceQueryService $accountBalanceQuery,
     ) {}
 
     public function execute(User $user, TransferFundsData $data): LedgerTransaction

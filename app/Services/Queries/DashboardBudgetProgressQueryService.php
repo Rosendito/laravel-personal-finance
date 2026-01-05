@@ -27,10 +27,10 @@ final class DashboardBudgetProgressQueryService
             ->get();
 
         return $budgets
-            ->map(function (Budget $budget) use ($startAt, $endAt) {
+            ->map(function (Budget $budget) use ($startAt, $endAt): ?BudgetProgressData {
                 $period = $this->intersectingPeriod($budget, $startAt, $endAt);
 
-                if ($period === null) {
+                if (! $period instanceof BudgetPeriod) {
                     return null;
                 }
 
@@ -59,9 +59,7 @@ final class DashboardBudgetProgressQueryService
     {
         return $budget->periods
             ->sortByDesc('start_at')
-            ->first(function (BudgetPeriod $period) use ($startAt, $endAt): bool {
-                return $period->start_at <= $endAt && $period->end_at > $startAt;
-            });
+            ->first(fn (BudgetPeriod $period): bool => $period->start_at <= $endAt && $period->end_at > $startAt);
     }
 
     private function spentInRange(int $budgetId, CarbonInterface $startAt, CarbonInterface $endAt): string

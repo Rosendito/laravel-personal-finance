@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\LedgerAccountSubType;
 use App\Enums\LedgerAccountType;
 use Database\Factories\LedgerAccountFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,40 +34,45 @@ final class LedgerAccount extends Model
         return $this->hasMany(LedgerEntry::class, 'account_id');
     }
 
-    public function scopeWithMostTransactions(Builder $query): Builder
+    #[Scope]
+    protected function withMostTransactions(Builder $query): Builder
     {
         return $query
             ->addSelect([
-                'transactions_count' => LedgerEntry::selectRaw('count(distinct transaction_id)')
+                'transactions_count' => LedgerEntry::query()->selectRaw('count(distinct transaction_id)')
                     ->whereColumn('account_id', 'ledger_accounts.id'),
             ])
             ->orderByDesc('transactions_count');
     }
 
-    public function scopeWithMostIncomeTransactions(Builder $query): Builder
+    #[Scope]
+    protected function withMostIncomeTransactions(Builder $query): Builder
     {
-        return self::withMostTransactionsByAccountType($query, LedgerAccountType::INCOME, 'income_transactions_count');
+        return $this->withMostTransactionsByAccountType($query, LedgerAccountType::INCOME, 'income_transactions_count');
     }
 
-    public function scopeWithMostExpenseTransactions(Builder $query): Builder
+    #[Scope]
+    protected function withMostExpenseTransactions(Builder $query): Builder
     {
-        return self::withMostTransactionsByAccountType($query, LedgerAccountType::EXPENSE, 'expense_transactions_count');
+        return $this->withMostTransactionsByAccountType($query, LedgerAccountType::EXPENSE, 'expense_transactions_count');
     }
 
-    public function scopeWithBalance(Builder $query): Builder
+    #[Scope]
+    protected function withBalance(Builder $query): Builder
     {
         return $query
             ->addSelect([
-                'balance' => LedgerEntry::selectRaw('COALESCE(SUM(amount), 0)')
+                'balance' => LedgerEntry::query()->selectRaw('COALESCE(SUM(amount), 0)')
                     ->whereColumn('account_id', 'ledger_accounts.id'),
             ]);
     }
 
-    public function scopeWithBaseBalance(Builder $query): Builder
+    #[Scope]
+    protected function withBaseBalance(Builder $query): Builder
     {
         return $query
             ->addSelect([
-                'balance_base' => LedgerEntry::selectRaw('COALESCE(SUM(COALESCE(amount_base, amount)), 0)')
+                'balance_base' => LedgerEntry::query()->selectRaw('COALESCE(SUM(COALESCE(amount_base, amount)), 0)')
                     ->whereColumn('account_id', 'ledger_accounts.id'),
             ]);
     }
@@ -89,11 +95,11 @@ final class LedgerAccount extends Model
         ];
     }
 
-    private static function withMostTransactionsByAccountType(Builder $query, LedgerAccountType $accountType, string $countColumn): Builder
+    private function withMostTransactionsByAccountType(Builder $query, LedgerAccountType $accountType, string $countColumn): Builder
     {
         return $query
             ->addSelect([
-                $countColumn => LedgerEntry::selectRaw('count(distinct ledger_entries.transaction_id)')
+                $countColumn => LedgerEntry::query()->selectRaw('count(distinct ledger_entries.transaction_id)')
                     ->from('ledger_entries')
                     ->whereColumn('ledger_entries.account_id', 'ledger_accounts.id')
                     ->whereExists(static function ($subQuery) use ($accountType): void {

@@ -21,7 +21,7 @@ describe(LedgerTransactionService::class, function (): void {
 
         // Use default currency (USDT) for base currency calculations
         $defaultCurrencyCode = config('finance.currency.default', 'USDT');
-        $this->currency = Currency::where('code', $defaultCurrencyCode)->firstOrFail();
+        $this->currency = Currency::query()->where('code', $defaultCurrencyCode)->firstOrFail();
 
         $this->user = User::factory()->create();
 
@@ -43,30 +43,28 @@ describe(LedgerTransactionService::class, function (): void {
             ])
             ->create();
 
-        $this->makeTransactionData = function (array $transactionOverrides = [], ?array $entries = null): LedgerTransactionData {
-            return LedgerTransactionData::from(
-                array_merge(
-                    [
-                        'description' => 'Monthly Salary',
-                        'effective_at' => Date::now(),
-                        'posted_at' => Date::now(),
-                        'reference' => 'PAY-001',
-                        'source' => 'import',
-                        'entries' => $entries ?? [
-                            [
-                                'account_id' => $this->assetAccount->id,
-                                'amount' => 5_000,
-                            ],
-                            [
-                                'account_id' => $this->incomeAccount->id,
-                                'amount' => -5_000,
-                            ],
+        $this->makeTransactionData = (fn (array $transactionOverrides = [], ?array $entries = null): LedgerTransactionData => LedgerTransactionData::from(
+            array_merge(
+                [
+                    'description' => 'Monthly Salary',
+                    'effective_at' => Date::now(),
+                    'posted_at' => Date::now(),
+                    'reference' => 'PAY-001',
+                    'source' => 'import',
+                    'entries' => $entries ?? [
+                        [
+                            'account_id' => $this->assetAccount->id,
+                            'amount' => 5_000,
+                        ],
+                        [
+                            'account_id' => $this->incomeAccount->id,
+                            'amount' => -5_000,
                         ],
                     ],
-                    $transactionOverrides,
-                ),
-            );
-        };
+                ],
+                $transactionOverrides,
+            ),
+        ));
     });
 
     it('creates balanced transactions with entries atomically', function (): void {

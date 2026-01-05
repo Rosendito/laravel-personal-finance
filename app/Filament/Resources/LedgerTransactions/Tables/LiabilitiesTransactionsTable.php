@@ -11,7 +11,7 @@ use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 
 use function sprintf;
 
@@ -44,14 +44,17 @@ final class LiabilitiesTransactionsTable
                             ->native(false),
                     ])
                     ->query(static function (Builder $query, array $data): Builder {
+                        $from = $data['from'] ?? null;
+                        $until = $data['until'] ?? null;
+
                         return $query
                             ->when(
-                                filled($data['from'] ?? null),
-                                static fn (Builder $query, string $date): Builder => $query->whereDate('effective_at', '>=', $date),
+                                filled($from),
+                                static fn (Builder $query): Builder => $query->where('effective_at', '>=', Date::parse($from)->startOfDay()),
                             )
                             ->when(
-                                filled($data['until'] ?? null),
-                                static fn (Builder $query, string $date): Builder => $query->whereDate('effective_at', '<=', $date),
+                                filled($until),
+                                static fn (Builder $query): Builder => $query->where('effective_at', '<=', Date::parse($until)->endOfDay()),
                             );
                     })
                     ->indicateUsing(static function (array $data): ?string {
@@ -61,17 +64,17 @@ final class LiabilitiesTransactionsTable
                         if ($from !== null && $until !== null) {
                             return sprintf(
                                 'Entre %s y %s',
-                                Carbon::parse($from)->toFormattedDateString(),
-                                Carbon::parse($until)->toFormattedDateString(),
+                                Date::parse($from)->toFormattedDateString(),
+                                Date::parse($until)->toFormattedDateString(),
                             );
                         }
 
                         if ($from !== null) {
-                            return sprintf('Desde %s', Carbon::parse($from)->toFormattedDateString());
+                            return sprintf('Desde %s', Date::parse($from)->toFormattedDateString());
                         }
 
                         if ($until !== null) {
-                            return sprintf('Hasta %s', Carbon::parse($until)->toFormattedDateString());
+                            return sprintf('Hasta %s', Date::parse($until)->toFormattedDateString());
                         }
 
                         return null;

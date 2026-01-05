@@ -21,7 +21,7 @@ final class DatabaseSeeder extends Seeder
             'email' => 'demo@example.com',
         ]);
 
-        $currency = Currency::find('USDT');
+        $currency = Currency::query()->find('USDT');
 
         LedgerAccount::factory()->for($user)->create([
             'user_id' => $user->id,

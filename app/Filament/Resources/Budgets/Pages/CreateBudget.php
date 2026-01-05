@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Budgets\Pages;
 
 use App\Filament\Resources\Budgets\BudgetResource;
-use App\Models\Budget;
 use Filament\Resources\Pages\CreateRecord;
 
 final class CreateBudget extends CreateRecord

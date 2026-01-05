@@ -56,7 +56,7 @@ final class EnsureFundamentalAccounts
             // Which is probably what we want: "Does a fundamental Expense account in EUR exist for this user?"
             // If yes, don't create another one.
 
-            $exists = LedgerAccount::where('user_id', $user->id)
+            $exists = LedgerAccount::query()->where('user_id', $user->id)
                 ->where('type', $accountData['type'])
                 ->where('currency_code', $currencyCode)
                 ->where('is_fundamental', true)
@@ -66,7 +66,7 @@ final class EnsureFundamentalAccounts
                 continue;
             }
 
-            LedgerAccount::create([
+            LedgerAccount::query()->create([
                 'user_id' => $user->id,
                 'name' => $accountName,
                 'type' => $accountData['type'],

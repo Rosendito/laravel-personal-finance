@@ -9,10 +9,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
-final class InitializeUserSpace
+final readonly class InitializeUserSpace
 {
     public function __construct(
-        private readonly EnsureFundamentalAccounts $ensureFundamentalAccounts,
+        private EnsureFundamentalAccounts $ensureFundamentalAccounts,
     ) {}
 
     public function execute(User $user): void
@@ -29,9 +29,7 @@ final class InitializeUserSpace
         $currencyCode = config('finance.currency.default', 'USD');
 
         // Ensure currency exists (it should be seeded)
-        if (! Currency::where('code', $currencyCode)->exists()) {
-            throw new RuntimeException("Default currency '{$currencyCode}' not found in the system.");
-        }
+        throw_unless(Currency::query()->where('code', $currencyCode)->exists(), RuntimeException::class, "Default currency '{$currencyCode}' not found in the system.");
 
         $this->ensureFundamentalAccounts->execute($user, $currencyCode);
     }

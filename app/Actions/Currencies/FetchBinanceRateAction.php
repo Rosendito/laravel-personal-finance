@@ -55,13 +55,9 @@ final class FetchBinanceRateAction
 
         $data = $response->json();
 
-        if (! is_array($data) || ! ($data['success'] ?? false)) {
-            throw new RuntimeException('Unexpected response structure or success flag is false.');
-        }
+        throw_if(! is_array($data) || ! ($data['success'] ?? false), RuntimeException::class, 'Unexpected response structure or success flag is false.');
 
-        if (! isset($data['data']) || ! is_array($data['data']) || count($data['data']) === 0) {
-            throw new RuntimeException('No ads data returned from API.');
-        }
+        throw_if(! isset($data['data']) || ! is_array($data['data']) || count($data['data']) === 0, RuntimeException::class, 'No ads data returned from API.');
 
         $ads = array_slice($data['data'], 0, $rows);
 
@@ -77,9 +73,7 @@ final class FetchBinanceRateAction
             $prices[] = (float) $priceString;
         }
 
-        if (count($prices) === 0) {
-            throw new RuntimeException("No prices found in the first {$rows} ads.");
-        }
+        throw_if(count($prices) === 0, RuntimeException::class, "No prices found in the first {$rows} ads.");
 
         $average = array_sum($prices) / count($prices);
         $maxPrice = max($prices);

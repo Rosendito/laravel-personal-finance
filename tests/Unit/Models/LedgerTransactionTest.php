@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Date;
 describe(LedgerTransaction::class, function (): void {
     it('evaluates double-entry balance on transactions', function (): void {
         // Currency 'USD' created by global setup
-        $currency = Currency::where('code', 'USD')->firstOrFail();
+        $currency = Currency::query()->where('code', 'USD')->firstOrFail();
 
         $user = User::factory()->create();
 
@@ -70,8 +70,8 @@ describe(LedgerTransaction::class, function (): void {
     });
 
     it('evaluates double-entry balance on multi-currency transactions', function (): void {
-        $usd = Currency::where('code', 'USD')->firstOrFail();
-        $ves = Currency::firstOrCreate(['code' => 'VES'], ['precision' => 2]);
+        $usd = Currency::query()->where('code', 'USD')->firstOrFail();
+        $ves = Currency::query()->firstOrCreate(['code' => 'VES'], ['precision' => 2]);
 
         $user = User::factory()->create();
 
@@ -131,7 +131,7 @@ describe(LedgerTransaction::class, function (): void {
 
     it('derives account balances from ledger entries', function (): void {
         // Currency 'USD' created by global setup
-        $currency = Currency::where('code', 'USD')->firstOrFail();
+        $currency = Currency::query()->where('code', 'USD')->firstOrFail();
 
         $user = User::factory()->create();
 

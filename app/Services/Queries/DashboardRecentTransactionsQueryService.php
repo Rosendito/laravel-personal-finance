@@ -51,7 +51,7 @@ final class DashboardRecentTransactionsQueryService
                 $startAt->toDateString(),
                 $endAt->toDateString(),
             ])
-            ->orderByDesc('effective_at')
+            ->latest('effective_at')
             ->orderByDesc('id')
             ->limit($limit)
             ->get()

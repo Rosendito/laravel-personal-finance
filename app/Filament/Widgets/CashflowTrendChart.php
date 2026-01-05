@@ -36,21 +36,21 @@ final class CashflowTrendChart extends ChartWidget
 
         [$start, $end] = $this->dateRange();
 
-        $series = app(DashboardCashflowSeriesQueryService::class)
+        $series = resolve(DashboardCashflowSeriesQueryService::class)
             ->dailySeries($user, $start, $end);
 
         return [
             'datasets' => [
                 [
                     'label' => 'Gastos',
-                    'data' => array_map(static fn ($value) => (float) $value, $series->expenses),
+                    'data' => array_map(static fn (float|int|string $value): float => (float) $value, $series->expenses),
                     'borderColor' => '#ef4444',
                     'backgroundColor' => '#ef4444',
                     'fill' => false,
                 ],
                 [
                     'label' => 'Ingresos',
-                    'data' => array_map(static fn ($value) => (float) $value, $series->incomes),
+                    'data' => array_map(static fn (float|int|string $value): float => (float) $value, $series->incomes),
                     'borderColor' => '#10b981',
                     'backgroundColor' => '#10b981',
                     'fill' => false,

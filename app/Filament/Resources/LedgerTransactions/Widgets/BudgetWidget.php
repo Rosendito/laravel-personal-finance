@@ -34,20 +34,20 @@ final class BudgetWidget extends StatsOverviewWidget
         $currency = config('finance.currency.default');
 
         $anchorDate = $this->anchorDateFromPageFilters();
-        $periodResolver = $anchorDate === null ? null : app(BudgetPeriodForDateQueryService::class);
+        $periodResolver = $anchorDate instanceof CarbonImmutable ? resolve(BudgetPeriodForDateQueryService::class) : null;
 
         return Budget::query()
             ->where('user_id', $user->id)
             ->where('is_active', true)
-            ->when(
-                $anchorDate === null,
+            ->unless(
+                $anchorDate instanceof CarbonImmutable,
                 static fn ($query) => $query->with('currentPeriod'),
             )
             ->get()
-            ->map(function (Budget $budget) use ($currency, $anchorDate, $periodResolver) {
-                $period = $anchorDate === null
-                    ? $budget->currentPeriod
-                    : $periodResolver?->forBudget($budget->id, $anchorDate);
+            ->map(function (Budget $budget) use ($currency, $anchorDate, $periodResolver): ?BudgetStat {
+                $period = $anchorDate instanceof CarbonImmutable
+                    ? $periodResolver?->forBudget($budget->id, $anchorDate)
+                    : $budget->currentPeriod;
 
                 if ($period === null) {
                     return null;

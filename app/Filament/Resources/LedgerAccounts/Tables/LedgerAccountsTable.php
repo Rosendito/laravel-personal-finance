@@ -76,7 +76,7 @@ final class LedgerAccountsTable
                     ->label('Balance base')
                     ->state(static fn (LedgerAccount $record): string => MoneyFormatter::format(
                         $record->balance_base ?? 0,
-                        config('finance.currency.default') ?? '',
+                        config('finance.currency.default', ''),
                     ))
                     ->alignRight()
                     ->sortable()
@@ -127,9 +127,7 @@ final class LedgerAccountsTable
                     ->relationship(
                         name: 'currency',
                         titleAttribute: 'code',
-                        modifyQueryUsing: static function (Builder $query): Builder {
-                            return $query->orderBy('code');
-                        }
+                        modifyQueryUsing: static fn (Builder $query): Builder => $query->orderBy('code')
                     ),
                 TernaryFilter::make('is_archived')
                     ->label('Estado')

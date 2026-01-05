@@ -29,9 +29,7 @@ final class BudgetForm
                         ->required()
                         ->rule('string')
                         ->maxLength(255)
-                        ->unique(ignoreRecord: true, modifyRuleUsing: static function (Unique $rule): Unique {
-                            return $rule->where('user_id', Auth::id() ?? 0);
-                        }),
+                        ->unique(ignoreRecord: true, modifyRuleUsing: static fn (Unique $rule): Unique => $rule->where('user_id', Auth::id() ?? 0)),
                     Toggle::make('is_active')
                         ->label('Active')
                         ->default(true),

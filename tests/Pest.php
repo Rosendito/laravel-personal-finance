@@ -21,7 +21,7 @@ pest()->extend(TestCase::class)
 
         // Seed default currency to prevent InitializeUserSpace failures
         $defaultCurrency = config('finance.currency.default', 'USD');
-        if (! Currency::where('code', $defaultCurrency)->exists()) {
+        if (! Currency::query()->where('code', $defaultCurrency)->exists()) {
             Currency::factory()->create(['code' => $defaultCurrency]);
         }
     })

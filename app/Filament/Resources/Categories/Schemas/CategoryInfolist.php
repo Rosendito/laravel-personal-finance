@@ -24,12 +24,12 @@ final class CategoryInfolist
                         TextEntry::make('type')
                             ->label('Tipo')
                             ->badge()
-                            ->formatStateUsing(static fn(?CategoryType $state): string => match ($state) {
+                            ->formatStateUsing(static fn (?CategoryType $state): string => match ($state) {
                                 CategoryType::Income => 'Ingreso',
                                 CategoryType::Expense => 'Gasto',
                                 default => 'Desconocido',
                             })
-                            ->color(static fn(?CategoryType $state): string => match ($state) {
+                            ->color(static fn (?CategoryType $state): string => match ($state) {
                                 CategoryType::Income => 'success',
                                 CategoryType::Expense => 'warning',
                                 default => 'gray',
@@ -54,13 +54,13 @@ final class CategoryInfolist
                         TextEntry::make('is_archived')
                             ->label('Archivada')
                             ->badge()
-                            ->formatStateUsing(static fn(?bool $state): string => ($state ?? false) ? 'Sí' : 'No')
-                            ->color(static fn(?bool $state): string => ($state ?? false) ? 'gray' : 'success'),
+                            ->formatStateUsing(static fn (?bool $state): string => ($state ?? false) ? 'Sí' : 'No')
+                            ->color(static fn (?bool $state): string => ($state ?? false) ? 'gray' : 'success'),
                         TextEntry::make('is_reportable')
                             ->label('Reportable')
                             ->badge()
-                            ->formatStateUsing(static fn(?bool $state): string => ($state ?? false) ? 'Sí' : 'No')
-                            ->color(static fn(?bool $state): string => ($state ?? false) ? 'success' : 'danger'),
+                            ->formatStateUsing(static fn (?bool $state): string => ($state ?? false) ? 'Sí' : 'No')
+                            ->color(static fn (?bool $state): string => ($state ?? false) ? 'success' : 'danger'),
                         TextEntry::make('updated_at')
                             ->label('Actualizada')
                             ->dateTime(),

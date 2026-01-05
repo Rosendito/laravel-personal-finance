@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\CategoryType;
 use Database\Factories\CategoryFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -40,7 +41,8 @@ final class Category extends Model
         return $this->belongsTo(Budget::class);
     }
 
-    public function scopeWithBalance(Builder $query): Builder
+    #[Scope]
+    protected function withBalance(Builder $query): Builder
     {
         return $query
             ->addSelect([
@@ -48,9 +50,9 @@ final class Category extends Model
                     ->selectRaw('COALESCE(SUM(COALESCE(ledger_entries.amount_base, ledger_entries.amount)), 0)')
                     ->join('ledger_transactions', 'ledger_entries.transaction_id', '=', 'ledger_transactions.id')
                     ->join('ledger_accounts', 'ledger_entries.account_id', '=', 'ledger_accounts.id')
-                    ->where(function ($q) {
+                    ->where(function ($q): void {
                         $q->whereColumn('ledger_transactions.category_id', 'categories.id')
-                            ->orWhereIn('ledger_transactions.category_id', function ($subQuery) {
+                            ->orWhereIn('ledger_transactions.category_id', function ($subQuery): void {
                                 $subQuery->select('id')
                                     ->from('categories as child_categories')
                                     ->whereColumn('child_categories.parent_id', 'categories.id');

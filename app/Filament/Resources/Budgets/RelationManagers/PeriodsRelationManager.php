@@ -29,7 +29,7 @@ final class PeriodsRelationManager extends RelationManager
     {
         $ownerRecord = $this->getOwnerRecord();
         $lastPeriod = $ownerRecord->periods()->latest('start_at')->first();
-        $defaultStart = $lastPeriod?->end_at?->copy() ?? now()->startOfDay();
+        $defaultStart = $lastPeriod?->end_at?->copy() ?? today();
 
         return $schema
             ->components([
@@ -40,9 +40,7 @@ final class PeriodsRelationManager extends RelationManager
                     ->rule('date')
                     ->unique(
                         ignoreRecord: true,
-                        modifyRuleUsing: static function (Unique $rule) use ($ownerRecord): Unique {
-                            return $rule->where('budget_id', $ownerRecord->id);
-                        }
+                        modifyRuleUsing: static fn (Unique $rule): Unique => $rule->where('budget_id', $ownerRecord->id)
                     )
                     ->helperText('Transactions on this date are included in the period.'),
                 DatePicker::make('end_at')

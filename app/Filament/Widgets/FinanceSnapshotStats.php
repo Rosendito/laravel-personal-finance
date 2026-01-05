@@ -34,7 +34,7 @@ final class FinanceSnapshotStats extends StatsOverviewWidget
 
         $currency = config('finance.currency.default', 'USD');
 
-        $snapshot = app(DashboardAccountSnapshotQueryService::class)->snapshot(
+        $snapshot = resolve(DashboardAccountSnapshotQueryService::class)->snapshot(
             $user,
             CarbonImmutable::today(),
         );

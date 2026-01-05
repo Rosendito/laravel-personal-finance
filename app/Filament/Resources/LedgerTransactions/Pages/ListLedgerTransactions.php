@@ -26,28 +26,16 @@ final class ListLedgerTransactions extends ListRecords
     {
         return [
             'expense' => Tab::make('Gastos')
-                ->modifyQueryUsing(static function (Builder $query): Builder {
-                    return $query->whereHas('entries.account', static function (Builder $q): Builder {
-                        return $q->where('type', LedgerAccountType::EXPENSE);
-                    });
-                }),
+                ->modifyQueryUsing(static fn (Builder $query): Builder => $query->whereHas('entries.account', static fn (Builder $q): Builder => $q->where('type', LedgerAccountType::EXPENSE))),
             'income' => Tab::make('Ingresos')
-                ->modifyQueryUsing(static function (Builder $query): Builder {
-                    return $query->whereHas('entries.account', static function (Builder $q): Builder {
-                        return $q->where('type', LedgerAccountType::INCOME);
-                    });
-                }),
+                ->modifyQueryUsing(static fn (Builder $query): Builder => $query->whereHas('entries.account', static fn (Builder $q): Builder => $q->where('type', LedgerAccountType::INCOME))),
             'transfer' => Tab::make('Transacciones')
-                ->modifyQueryUsing(static function (Builder $query): Builder {
-                    return $query->whereDoesntHave('entries.account', static function (Builder $q): Builder {
-                        return $q->whereIn('type', [LedgerAccountType::INCOME, LedgerAccountType::EXPENSE]);
-                    });
-                }),
+                ->modifyQueryUsing(static fn (Builder $query): Builder => $query->whereDoesntHave('entries.account', static fn (Builder $q): Builder => $q->whereIn('type', [LedgerAccountType::INCOME, LedgerAccountType::EXPENSE]))),
             'all' => Tab::make('Todas'),
         ];
     }
 
-    public function getDefaultActiveTab(): string|int|null
+    public function getDefaultActiveTab(): string
     {
         return 'expense';
     }

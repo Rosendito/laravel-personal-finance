@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\LedgerTransactionFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -37,63 +38,6 @@ final class LedgerTransaction extends Model
         return $this->belongsTo(Category::class);
     }
 
-    /**
-     * Get categories as a collection for compatibility with existing code.
-     * Returns a collection with the category if it exists, empty collection otherwise.
-     *
-     * @return Collection<int, Category>
-     */
-    public function getCategoriesAttribute(): Collection
-    {
-        if ($this->category_id === null) {
-            return new Collection();
-        }
-
-        return new Collection([$this->category]);
-    }
-
-    public function scopeWithAmountSummary(Builder $query): Builder
-    {
-        return $query->addSelect([
-            'amount_summary' => LedgerEntry::selectRaw('MAX(ABS(amount))')
-                ->whereColumn('transaction_id', 'ledger_transactions.id'),
-            'amount_currency' => LedgerEntry::select('currency_code')
-                ->whereColumn('transaction_id', 'ledger_transactions.id')
-                ->orderByRaw('ABS(amount) DESC')
-                ->limit(1),
-        ]);
-    }
-
-    public function scopeWithBaseAmountSummary(Builder $query): Builder
-    {
-        return $query->addSelect([
-            'amount_base_summary' => LedgerEntry::selectRaw('MAX(ABS(COALESCE(amount_base, amount)))')
-                ->whereColumn('transaction_id', 'ledger_transactions.id'),
-        ]);
-    }
-
-    /**
-     * Apply a category filter with an exclusive "uncategorized" option.
-     *
-     * @param  array<int, int|string>  $categoryIds
-     */
-    public function scopeWhereCategoryFilter(Builder $query, bool $uncategorized, array $categoryIds = []): Builder
-    {
-        if ($uncategorized) {
-            return $query->whereNull('category_id');
-        }
-
-        $categoryIds = array_values(array_filter($categoryIds, static fn (mixed $value): bool => $value !== null && $value !== ''));
-
-        if ($categoryIds === []) {
-            return $query;
-        }
-
-        $categoryIds = array_values(array_map(static fn (mixed $value): int => (int) $value, $categoryIds));
-
-        return $query->whereIn('category_id', $categoryIds);
-    }
-
     public function isBalanced(): bool
     {
         $entries = $this->entries()->get();
@@ -108,6 +52,66 @@ final class LedgerTransaction extends Model
         );
 
         return bccomp($total, '0', 6) === 0;
+    }
+
+    /**
+     * Get categories as a collection for compatibility with existing code.
+     * Returns a collection with the category if it exists, empty collection otherwise.
+     *
+     * @return Collection<int, Category>
+     */
+    protected function getCategoriesAttribute(): Collection
+    {
+        if ($this->category_id === null) {
+            return new Collection();
+        }
+
+        return new Collection([$this->category]);
+    }
+
+    #[Scope]
+    protected function withAmountSummary(Builder $query): Builder
+    {
+        return $query->addSelect([
+            'amount_summary' => LedgerEntry::query()->selectRaw('MAX(ABS(amount))')
+                ->whereColumn('transaction_id', 'ledger_transactions.id'),
+            'amount_currency' => LedgerEntry::query()->select('currency_code')
+                ->whereColumn('transaction_id', 'ledger_transactions.id')
+                ->orderByRaw('ABS(amount) DESC')
+                ->limit(1),
+        ]);
+    }
+
+    #[Scope]
+    protected function withBaseAmountSummary(Builder $query): Builder
+    {
+        return $query->addSelect([
+            'amount_base_summary' => LedgerEntry::query()->selectRaw('MAX(ABS(COALESCE(amount_base, amount)))')
+                ->whereColumn('transaction_id', 'ledger_transactions.id'),
+        ]);
+    }
+
+    /**
+     * Apply a category filter with an exclusive "uncategorized" option.
+     *
+     * @param  array<int, int|string>  $categoryIds
+     */
+    #[Scope]
+    protected function whereCategoryFilter(Builder $query, bool $uncategorized, array $categoryIds = []): Builder
+    {
+        if ($uncategorized) {
+            return $query->whereNull('category_id');
+        }
+
+        $categoryIds = array_values(array_filter($categoryIds, static fn (mixed $value): bool => $value !== null && $value !== ''));
+
+        if ($categoryIds === []) {
+            return $query;
+        }
+
+        $categoryIds = array_values(array_map(static fn (mixed $value): int => (int) $value, $categoryIds));
+
+        return $query->whereIn('category_id', $categoryIds);
     }
 
     /**

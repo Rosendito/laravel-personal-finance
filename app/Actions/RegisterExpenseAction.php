@@ -12,13 +12,14 @@ use App\Models\LedgerAccount;
 use App\Models\LedgerTransaction;
 use App\Models\User;
 use App\Services\LedgerTransactionService;
+use App\Services\Queries\AccountBalanceQueryService;
 
-final class RegisterExpenseAction
+final readonly class RegisterExpenseAction
 {
     public function __construct(
-        private readonly LedgerTransactionService $ledgerTransactionService,
-        private readonly ResolveFundamentalAccount $resolveFundamentalAccount,
-        private readonly \App\Services\Queries\AccountBalanceQueryService $accountBalanceQuery,
+        private LedgerTransactionService $ledgerTransactionService,
+        private ResolveFundamentalAccount $resolveFundamentalAccount,
+        private AccountBalanceQueryService $accountBalanceQuery,
     ) {}
 
     public function execute(User $user, RegisterExpenseData $data): LedgerTransaction

@@ -21,13 +21,13 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
             ->create();
 
         // Verify fundamental accounts were created
-        $expenseAccount = LedgerAccount::where('user_id', $user->id)
+        $expenseAccount = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'EUR')
             ->where('type', LedgerAccountType::EXPENSE)
             ->where('name', 'External Expenses (EUR)')
             ->first();
 
-        $incomeAccount = LedgerAccount::where('user_id', $user->id)
+        $incomeAccount = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'EUR')
             ->where('type', LedgerAccountType::INCOME)
             ->where('name', 'External Income (EUR)')
@@ -55,13 +55,13 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
         $account->save();
 
         // Verify fundamental accounts were created for GBP
-        $expenseAccount = LedgerAccount::where('user_id', $user->id)
+        $expenseAccount = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'GBP')
             ->where('type', LedgerAccountType::EXPENSE)
             ->where('name', 'External Expenses (GBP)')
             ->first();
 
-        $incomeAccount = LedgerAccount::where('user_id', $user->id)
+        $incomeAccount = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'GBP')
             ->where('type', LedgerAccountType::INCOME)
             ->where('name', 'External Income (GBP)')
@@ -82,7 +82,7 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
             ->create();
 
         // Count before update
-        $countBefore = LedgerAccount::where('user_id', $user->id)
+        $countBefore = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'EUR')
             ->count();
 
@@ -91,7 +91,7 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
         $account->save();
 
         // Count should be the same (no new fundamental accounts)
-        $countAfter = LedgerAccount::where('user_id', $user->id)
+        $countAfter = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'EUR')
             ->count();
 
@@ -103,10 +103,10 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
         $user = User::factory()->create();
 
         // Manually create fundamental accounts
-        $ensureFundamentalAccounts = app(EnsureFundamentalAccounts::class);
+        $ensureFundamentalAccounts = resolve(EnsureFundamentalAccounts::class);
         $ensureFundamentalAccounts->execute($user, 'EUR');
 
-        $countBefore = LedgerAccount::where('user_id', $user->id)
+        $countBefore = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'EUR')
             ->count();
 
@@ -117,7 +117,7 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
             ->state(['currency_code' => 'EUR'])
             ->create();
 
-        $countAfter = LedgerAccount::where('user_id', $user->id)
+        $countAfter = LedgerAccount::query()->where('user_id', $user->id)
             ->where('currency_code', 'EUR')
             ->count();
 
