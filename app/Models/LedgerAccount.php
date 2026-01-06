@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 final class LedgerAccount extends Model
 {
@@ -102,7 +103,7 @@ final class LedgerAccount extends Model
                 $countColumn => LedgerEntry::query()->selectRaw('count(distinct ledger_entries.transaction_id)')
                     ->from('ledger_entries')
                     ->whereColumn('ledger_entries.account_id', 'ledger_accounts.id')
-                    ->whereExists(static function ($subQuery) use ($accountType): void {
+                    ->whereExists(static function (QueryBuilder $subQuery) use ($accountType): void {
                         $subQuery->selectRaw('1')
                             ->from('ledger_entries as other_entries')
                             ->join('ledger_accounts as other_accounts', 'other_entries.account_id', '=', 'other_accounts.id')

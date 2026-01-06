@@ -45,7 +45,7 @@ final class LedgerAccountForm
                             ->native(false)
                             ->live()
                             ->enum(LedgerAccountType::class)
-                            ->afterStateUpdated(static function ($state, callable $set): void {
+                            ->afterStateUpdated(static function (mixed $state, callable $set): void {
                                 $set('subtype', null);
                             }),
                         Select::make('subtype')

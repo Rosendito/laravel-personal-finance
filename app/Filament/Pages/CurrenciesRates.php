@@ -14,7 +14,7 @@ use Throwable;
 
 final class CurrenciesRates extends Page
 {
-    public $transAmount = 10000;
+    public int|float $transAmount = 10000;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-currency-dollar';
 
