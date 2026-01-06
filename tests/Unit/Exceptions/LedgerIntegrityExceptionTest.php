@@ -13,7 +13,7 @@ describe(LedgerIntegrityException::class, function (): void {
         expect($exception->getMessage())->toBe($expectedMessage);
     })->with([
         'amountMustBeNonZero' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::amountMustBeNonZero(),
+            LedgerIntegrityException::amountMustBeNonZero(...),
             'Ledger entry amount must be non-zero.',
         ],
         'accountNotFound' => [
@@ -21,7 +21,7 @@ describe(LedgerIntegrityException::class, function (): void {
             'Ledger account [123] was not found.',
         ],
         'accountReferenceRequired' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::accountReferenceRequired(),
+            LedgerIntegrityException::accountReferenceRequired(...),
             'Ledger entries must reference an account.',
         ],
         'transactionNotFound' => [
@@ -29,11 +29,11 @@ describe(LedgerIntegrityException::class, function (): void {
             'Ledger transaction [456] was not found.',
         ],
         'accountOwnershipMismatch' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::accountOwnershipMismatch(),
+            LedgerIntegrityException::accountOwnershipMismatch(...),
             'Ledger account does not belong to the same user as the transaction.',
         ],
         'categoryOwnershipMismatch' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::categoryOwnershipMismatch(),
+            LedgerIntegrityException::categoryOwnershipMismatch(...),
             'Ledger category does not belong to the same user as the transaction.',
         ],
         'categoryNotFound' => [
@@ -41,19 +41,19 @@ describe(LedgerIntegrityException::class, function (): void {
             'Ledger category [789] was not found.',
         ],
         'currencyMismatch' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::currencyMismatch(),
+            LedgerIntegrityException::currencyMismatch(...),
             'Ledger entry currency must match the related account currency.',
         ],
         'insufficientEntries' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::insufficientEntries(),
+            LedgerIntegrityException::insufficientEntries(...),
             'Ledger transactions require at least two entries.',
         ],
         'unbalancedEntries' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::unbalancedEntries(),
+            LedgerIntegrityException::unbalancedEntries(...),
             'Ledger transactions must have entries that sum to zero.',
         ],
         'mixedBudgetAssignments' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::mixedBudgetAssignments(),
+            LedgerIntegrityException::mixedBudgetAssignments(...),
             'Ledger transactions cannot be linked to multiple budgets.',
         ],
         'budgetPeriodNotFound' => [
@@ -61,11 +61,11 @@ describe(LedgerIntegrityException::class, function (): void {
             'Budget [10] does not have a period covering 2025-01-01.',
         ],
         'cannotDeleteFundamentalAccount' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::cannotDeleteFundamentalAccount(),
+            LedgerIntegrityException::cannotDeleteFundamentalAccount(...),
             'Cannot delete fundamental accounts (External Expenses/Income).',
         ],
         'cannotDeleteAccountWithEntries' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::cannotDeleteAccountWithEntries(),
+            LedgerIntegrityException::cannotDeleteAccountWithEntries(...),
             'Cannot delete account that has ledger entries associated.',
         ],
         'fundamentalAccountNotFound' => [
@@ -77,7 +77,7 @@ describe(LedgerIntegrityException::class, function (): void {
             'Fundamental EXPENSE account for user 7 and currency USD was not found.',
         ],
         'insufficientFunds' => [
-            fn (): LedgerIntegrityException => LedgerIntegrityException::insufficientFunds(),
+            LedgerIntegrityException::insufficientFunds(...),
             'Insufficient funds in the account.',
         ],
     ]);

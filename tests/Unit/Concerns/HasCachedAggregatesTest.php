@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Concerns\HasCachedAggregates;
 use App\Enums\CachedAggregateKey;
 use App\Enums\CachedAggregateScope;
 use App\Models\Budget;
 use App\Models\CachedAggregate;
 
-describe(App\Concerns\HasCachedAggregates::class, function (): void {
+describe(HasCachedAggregates::class, function (): void {
     it('upserts and fetches aggregates by key and nullable scope', function (): void {
         $budget = Budget::factory()->create();
 
