@@ -13,42 +13,40 @@ use App\Services\Queries\AccountBalanceQueryService;
 use Carbon\CarbonImmutable;
 
 describe(AccountBalanceQueryService::class, function (): void {
-    beforeEach(function (): void {
-        $this->service = new AccountBalanceQueryService();
-        $this->user = User::factory()->create();
-        $this->currency = Currency::query()->updateOrCreate(
+    it('summarizes balances per account with optional as-of dates', function (): void {
+        $service = new AccountBalanceQueryService();
+        $user = User::factory()->create();
+        $currency = Currency::query()->updateOrCreate(
             ['code' => 'USD'],
             ['precision' => 2],
         );
 
-        $this->assetAccount = LedgerAccount::factory()
-            ->for($this->user)
+        $assetAccount = LedgerAccount::factory()
+            ->for($user)
             ->ofType(LedgerAccountType::ASSET)
             ->state([
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
 
-        $this->incomeAccount = LedgerAccount::factory()
-            ->for($this->user)
+        $incomeAccount = LedgerAccount::factory()
+            ->for($user)
             ->ofType(LedgerAccountType::INCOME)
             ->state([
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
 
-        $this->expenseAccount = LedgerAccount::factory()
-            ->for($this->user)
+        $expenseAccount = LedgerAccount::factory()
+            ->for($user)
             ->ofType(LedgerAccountType::EXPENSE)
             ->state([
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
-    });
 
-    it('summarizes balances per account with optional as-of dates', function (): void {
         $earlyTransaction = LedgerTransaction::factory()
-            ->for($this->user)
+            ->for($user)
             ->state([
                 'effective_at' => CarbonImmutable::parse('2025-11-05 08:00:00'),
                 'posted_at' => '2025-11-06',
@@ -57,24 +55,24 @@ describe(AccountBalanceQueryService::class, function (): void {
 
         LedgerEntry::factory()
             ->for($earlyTransaction, 'transaction')
-            ->for($this->assetAccount, 'account')
+            ->for($assetAccount, 'account')
             ->state([
                 'amount' => 1_000,
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
 
         LedgerEntry::factory()
             ->for($earlyTransaction, 'transaction')
-            ->for($this->incomeAccount, 'account')
+            ->for($incomeAccount, 'account')
             ->state([
                 'amount' => -1_000,
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
 
         $lateTransaction = LedgerTransaction::factory()
-            ->for($this->user)
+            ->for($user)
             ->state([
                 'effective_at' => CarbonImmutable::parse('2025-12-10 09:00:00'),
                 'posted_at' => '2025-12-11',
@@ -83,30 +81,30 @@ describe(AccountBalanceQueryService::class, function (): void {
 
         LedgerEntry::factory()
             ->for($lateTransaction, 'transaction')
-            ->for($this->assetAccount, 'account')
+            ->for($assetAccount, 'account')
             ->state([
                 'amount' => -200,
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
 
         LedgerEntry::factory()
             ->for($lateTransaction, 'transaction')
-            ->for($this->expenseAccount, 'account')
+            ->for($expenseAccount, 'account')
             ->state([
                 'amount' => 200,
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
 
-        $balancesAsOfNovember = $this->service->totalsForUser(
-            $this->user,
+        $balancesAsOfNovember = $service->totalsForUser(
+            $user,
             CarbonImmutable::parse('2025-11-30 23:59:59'),
         );
 
-        $assetBalance = $balancesAsOfNovember->firstWhere('account_id', $this->assetAccount->id);
-        $incomeBalance = $balancesAsOfNovember->firstWhere('account_id', $this->incomeAccount->id);
-        $expenseBalance = $balancesAsOfNovember->firstWhere('account_id', $this->expenseAccount->id);
+        $assetBalance = $balancesAsOfNovember->firstWhere('account_id', $assetAccount->id);
+        $incomeBalance = $balancesAsOfNovember->firstWhere('account_id', $incomeAccount->id);
+        $expenseBalance = $balancesAsOfNovember->firstWhere('account_id', $expenseAccount->id);
 
         expect($assetBalance)->toBeInstanceOf(AccountBalanceData::class);
         expect($assetBalance->balance)->toBe('1000.000000');
@@ -120,10 +118,10 @@ describe(AccountBalanceQueryService::class, function (): void {
         expect($expenseBalance->balance)->toBe('0.000000');
         expect($expenseBalance->is_fundamental)->toBeFalse();
 
-        $balancesAll = $this->service->totalsForUser($this->user);
+        $balancesAll = $service->totalsForUser($user);
 
-        $assetBalanceAll = $balancesAll->firstWhere('account_id', $this->assetAccount->id);
-        $expenseBalanceAll = $balancesAll->firstWhere('account_id', $this->expenseAccount->id);
+        $assetBalanceAll = $balancesAll->firstWhere('account_id', $assetAccount->id);
+        $expenseBalanceAll = $balancesAll->firstWhere('account_id', $expenseAccount->id);
 
         expect($assetBalanceAll)->toBeInstanceOf(AccountBalanceData::class);
         expect($assetBalanceAll->balance)->toBe('800.000000');

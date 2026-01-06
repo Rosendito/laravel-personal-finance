@@ -14,70 +14,91 @@ use App\Models\User;
 use Illuminate\Support\Facades\Date;
 
 describe(RegisterExpenseAction::class, function (): void {
-    beforeEach(function (): void {
-        $this->action = resolve(RegisterExpenseAction::class);
-        $this->user = User::factory()->create();
+    /**
+     * @return array{
+     *   action: RegisterExpenseAction,
+     *   user: User,
+     *   paymentAccount: LedgerAccount,
+     *   expenseCategory: Category
+     * }
+     */
+    $makeContext = function (): array {
+        $action = resolve(RegisterExpenseAction::class);
+        $user = User::factory()->create();
 
-        $this->paymentAccount = LedgerAccount::factory()
-            ->for($this->user)
+        $paymentAccount = LedgerAccount::factory()
+            ->for($user)
             ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'USD'])
             ->create();
 
-        $this->expenseCategory = Category::factory()
+        $expenseCategory = Category::factory()
             ->expense()
-            ->for($this->user)
+            ->for($user)
             ->create();
-    });
 
-    it('creates a transaction debiting the fundamental expense account', function (): void {
+        return [
+            'action' => $action,
+            'user' => $user,
+            'paymentAccount' => $paymentAccount,
+            'expenseCategory' => $expenseCategory,
+        ];
+    };
+
+    it('creates a transaction debiting the fundamental expense account', function () use ($makeContext): void {
+        [
+            'action' => $action,
+            'user' => $user,
+            'paymentAccount' => $paymentAccount,
+            'expenseCategory' => $expenseCategory,
+        ] = $makeContext();
+
         // Fund the account first
         LedgerEntry::factory()
-            ->for($this->paymentAccount, 'account')
-            ->for(LedgerTransaction::factory()->create(['user_id' => $this->user->id]), 'transaction')
+            ->for($paymentAccount, 'account')
+            ->for(LedgerTransaction::factory()->create(['user_id' => $user->id]), 'transaction')
             ->create(['amount' => 1000, 'currency_code' => 'USD']);
-
-        /** @var RegisterExpenseAction $action */
-        $action = $this->action;
 
         $data = RegisterExpenseData::from([
             'description' => 'Grocery shopping',
             'effective_at' => Date::now(),
             'posted_at' => Date::now(),
-            'account_id' => $this->paymentAccount->id,
+            'account_id' => $paymentAccount->id,
             'amount' => '275.45',
             'memo' => 'Weekly groceries',
             'reference' => 'EXP-2024-10',
             'source' => 'manual',
             'idempotency_key' => 'expense-grocery-1',
-            'category_id' => $this->expenseCategory->id,
+            'category_id' => $expenseCategory->id,
         ]);
 
-        $transaction = $action->execute($this->user, $data);
+        $transaction = $action->execute($user, $data);
 
         $expenseAccount = LedgerAccount::query()
-            ->where('user_id', $this->user->id)
+            ->where('user_id', $user->id)
             ->where('currency_code', 'USD')
             ->where('type', LedgerAccountType::EXPENSE)
             ->where('is_fundamental', true)
             ->firstOrFail();
 
         $paymentEntry = $transaction->entries
-            ->firstWhere('account_id', $this->paymentAccount->id);
+            ->firstWhere('account_id', $paymentAccount->id);
 
         $expenseEntry = $transaction->entries
             ->firstWhere('account_id', $expenseAccount->id);
 
         expect($transaction->description)->toBe('Grocery shopping')
-            ->and($transaction->category_id)->toBe($this->expenseCategory->id)
+            ->and($transaction->category_id)->toBe($expenseCategory->id)
             ->and($paymentEntry->amount)->toBe('-275.450000')
             ->and($paymentEntry->memo)->toBe('Weekly groceries')
             ->and($expenseEntry->amount)->toBe('275.450000');
     });
 
-    it('rejects accounts that do not belong to the user', function (): void {
-        /** @var RegisterExpenseAction $action */
-        $action = $this->action;
+    it('rejects accounts that do not belong to the user', function () use ($makeContext): void {
+        [
+            'action' => $action,
+            'user' => $user,
+        ] = $makeContext();
 
         $foreignAccount = LedgerAccount::factory()
             ->for(User::factory()->create())
@@ -92,7 +113,7 @@ describe(RegisterExpenseAction::class, function (): void {
             'amount' => '45',
         ]);
 
-        expect(fn (): mixed => $action->execute($this->user, $data))
+        expect(fn (): mixed => $action->execute($user, $data))
             ->toThrow(LedgerIntegrityException::class);
     });
 });

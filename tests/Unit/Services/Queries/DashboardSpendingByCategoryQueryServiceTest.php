@@ -13,44 +13,41 @@ use App\Services\Queries\DashboardSpendingByCategoryQueryService;
 use Carbon\CarbonImmutable;
 
 describe(DashboardSpendingByCategoryQueryService::class, function (): void {
-    beforeEach(function (): void {
-        $this->service = new DashboardSpendingByCategoryQueryService();
-        $this->user = User::factory()->create();
-
-        $this->currency = Currency::query()->updateOrCreate(
+    it('returns totals grouped by category id (deterministic)', function (): void {
+        $service = new DashboardSpendingByCategoryQueryService();
+        $user = User::factory()->create();
+        $currency = Currency::query()->updateOrCreate(
             ['code' => 'USD'],
             ['precision' => 2],
         );
 
-        $this->assetAccount = LedgerAccount::factory()
-            ->for($this->user)
+        $assetAccount = LedgerAccount::factory()
+            ->for($user)
             ->ofType(LedgerAccountType::ASSET)
             ->state([
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
 
-        $this->expenseAccount = LedgerAccount::factory()
-            ->for($this->user)
+        $expenseAccount = LedgerAccount::factory()
+            ->for($user)
             ->ofType(LedgerAccountType::EXPENSE)
             ->state([
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
             ])
             ->create();
-    });
 
-    it('returns totals grouped by category id (deterministic)', function (): void {
         $start = CarbonImmutable::parse('2025-01-01 00:00:00');
         $end = CarbonImmutable::parse('2025-01-31 23:59:59');
 
         $food = Category::factory()
-            ->for($this->user)
+            ->for($user)
             ->expense()
             ->state(['name' => 'Food'])
             ->create();
 
         $health = Category::factory()
-            ->for($this->user)
+            ->for($user)
             ->expense()
             ->state([
                 'name' => 'Health',
@@ -59,77 +56,77 @@ describe(DashboardSpendingByCategoryQueryService::class, function (): void {
             ->create();
 
         $t1 = LedgerTransaction::factory()
-            ->for($this->user)
+            ->for($user)
             ->withCategory($food)
             ->state(['effective_at' => CarbonImmutable::parse('2025-01-10 10:00:00')])
             ->create();
 
         LedgerEntry::factory()
             ->for($t1, 'transaction')
-            ->for($this->assetAccount, 'account')
-            ->state(['amount' => -100, 'currency_code' => $this->currency->code])
+            ->for($assetAccount, 'account')
+            ->state(['amount' => -100, 'currency_code' => $currency->code])
             ->create();
 
         LedgerEntry::factory()
             ->for($t1, 'transaction')
-            ->for($this->expenseAccount, 'account')
-            ->state(['amount' => 100, 'currency_code' => $this->currency->code])
+            ->for($expenseAccount, 'account')
+            ->state(['amount' => 100, 'currency_code' => $currency->code])
             ->create();
 
         $t2 = LedgerTransaction::factory()
-            ->for($this->user)
+            ->for($user)
             ->withCategory($food)
             ->state(['effective_at' => CarbonImmutable::parse('2025-01-15 10:00:00')])
             ->create();
 
         LedgerEntry::factory()
             ->for($t2, 'transaction')
-            ->for($this->assetAccount, 'account')
-            ->state(['amount' => -200, 'currency_code' => $this->currency->code])
+            ->for($assetAccount, 'account')
+            ->state(['amount' => -200, 'currency_code' => $currency->code])
             ->create();
 
         LedgerEntry::factory()
             ->for($t2, 'transaction')
-            ->for($this->expenseAccount, 'account')
-            ->state(['amount' => 200, 'currency_code' => $this->currency->code])
+            ->for($expenseAccount, 'account')
+            ->state(['amount' => 200, 'currency_code' => $currency->code])
             ->create();
 
         $t3 = LedgerTransaction::factory()
-            ->for($this->user)
+            ->for($user)
             ->withCategory($health)
             ->state(['effective_at' => CarbonImmutable::parse('2025-01-20 10:00:00')])
             ->create();
 
         LedgerEntry::factory()
             ->for($t3, 'transaction')
-            ->for($this->assetAccount, 'account')
-            ->state(['amount' => -50, 'currency_code' => $this->currency->code])
+            ->for($assetAccount, 'account')
+            ->state(['amount' => -50, 'currency_code' => $currency->code])
             ->create();
 
         LedgerEntry::factory()
             ->for($t3, 'transaction')
-            ->for($this->expenseAccount, 'account')
-            ->state(['amount' => 50, 'currency_code' => $this->currency->code])
+            ->for($expenseAccount, 'account')
+            ->state(['amount' => 50, 'currency_code' => $currency->code])
             ->create();
 
         $t4 = LedgerTransaction::factory()
-            ->for($this->user)
+            ->for($user)
             ->state(['effective_at' => CarbonImmutable::parse('2025-01-25 10:00:00')])
             ->create();
 
         LedgerEntry::factory()
             ->for($t4, 'transaction')
-            ->for($this->assetAccount, 'account')
-            ->state(['amount' => -30, 'currency_code' => $this->currency->code])
+            ->for($assetAccount, 'account')
+            ->state(['amount' => -30, 'currency_code' => $currency->code])
             ->create();
 
         LedgerEntry::factory()
             ->for($t4, 'transaction')
-            ->for($this->expenseAccount, 'account')
-            ->state(['amount' => 30, 'currency_code' => $this->currency->code])
+            ->for($expenseAccount, 'account')
+            ->state(['amount' => 30, 'currency_code' => $currency->code])
             ->create();
 
-        $totals = $this->service->totals($this->user, $start, $end)->values();
+        $totals = $service->totals($user, $start, $end)->values();
 
         expect($totals)->toHaveCount(2);
 

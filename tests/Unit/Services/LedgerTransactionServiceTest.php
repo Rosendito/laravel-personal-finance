@@ -16,34 +16,43 @@ use App\Services\LedgerTransactionService;
 use Illuminate\Support\Facades\Date;
 
 describe(LedgerTransactionService::class, function (): void {
-    beforeEach(function (): void {
-        $this->service = new LedgerTransactionService();
+    /**
+     * @return array{
+     *   service: LedgerTransactionService,
+     *   currency: Currency,
+     *   user: User,
+     *   assetAccount: LedgerAccount,
+     *   incomeAccount: LedgerAccount,
+     *   makeTransactionData: Closure(array=, ?array=): LedgerTransactionData
+     * }
+     */
+    $makeContext = function (): array {
+        $service = new LedgerTransactionService();
 
-        // Use default currency (USDT) for base currency calculations
         $defaultCurrencyCode = config('finance.currency.default', 'USDT');
-        $this->currency = Currency::query()->where('code', $defaultCurrencyCode)->firstOrFail();
+        $currency = Currency::query()->where('code', $defaultCurrencyCode)->firstOrFail();
 
-        $this->user = User::factory()->create();
+        $user = User::factory()->create();
 
-        $this->assetAccount = LedgerAccount::factory()
-            ->for($this->user)
+        $assetAccount = LedgerAccount::factory()
+            ->for($user)
             ->ofType(LedgerAccountType::ASSET)
             ->state([
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
                 'name' => 'Cash',
             ])
             ->create();
 
-        $this->incomeAccount = LedgerAccount::factory()
-            ->for($this->user)
+        $incomeAccount = LedgerAccount::factory()
+            ->for($user)
             ->ofType(LedgerAccountType::INCOME)
             ->state([
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
                 'name' => 'Salary',
             ])
             ->create();
 
-        $this->makeTransactionData = (fn (array $transactionOverrides = [], ?array $entries = null): LedgerTransactionData => LedgerTransactionData::from(
+        $makeTransactionData = fn (array $transactionOverrides = [], ?array $entries = null): LedgerTransactionData => LedgerTransactionData::from(
             array_merge(
                 [
                     'description' => 'Monthly Salary',
@@ -53,26 +62,38 @@ describe(LedgerTransactionService::class, function (): void {
                     'source' => 'import',
                     'entries' => $entries ?? [
                         [
-                            'account_id' => $this->assetAccount->id,
+                            'account_id' => $assetAccount->id,
                             'amount' => 5_000,
                         ],
                         [
-                            'account_id' => $this->incomeAccount->id,
+                            'account_id' => $incomeAccount->id,
                             'amount' => -5_000,
                         ],
                     ],
                 ],
                 $transactionOverrides,
             ),
-        ));
-    });
+        );
 
-    it('creates balanced transactions with entries atomically', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+        return [
+            'service' => $service,
+            'currency' => $currency,
+            'user' => $user,
+            'assetAccount' => $assetAccount,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ];
+    };
 
-        $transaction = $this->service->create(
-            $this->user,
+    it('creates balanced transactions with entries atomically', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
+
+        $transaction = $service->create(
+            $user,
             $makeTransactionData(),
         );
 
@@ -80,60 +101,74 @@ describe(LedgerTransactionService::class, function (): void {
         expect($transaction->isBalanced())->toBeTrue();
     });
 
-    it('requires at least two entries', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('requires at least two entries', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'assetAccount' => $assetAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         $data = $makeTransactionData(entries: [
             [
-                'account_id' => $this->assetAccount->id,
+                'account_id' => $assetAccount->id,
                 'amount' => 50,
             ],
         ]);
 
-        expect(fn (): mixed => $this->service->create(
-            $this->user,
+        expect(fn (): mixed => $service->create(
+            $user,
             $data,
         ))->toThrow(LedgerIntegrityException::class, 'at least two');
     });
 
-    it('requires balanced entries', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('requires balanced entries', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'assetAccount' => $assetAccount,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         $data = $makeTransactionData(entries: [
             [
-                'account_id' => $this->assetAccount->id,
+                'account_id' => $assetAccount->id,
                 'amount' => 100,
             ],
             [
-                'account_id' => $this->incomeAccount->id,
+                'account_id' => $incomeAccount->id,
                 'amount' => -50,
             ],
         ]);
 
-        expect(fn (): mixed => $this->service->create(
-            $this->user,
+        expect(fn (): mixed => $service->create(
+            $user,
             $data,
         ))->toThrow(LedgerIntegrityException::class, 'sum to zero');
     });
 
-    it('validates account ownership independently from categories', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('validates account ownership independently from categories', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'currency' => $currency,
+            'user' => $user,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         $foreignAccount = LedgerAccount::factory()
             ->for(User::factory()->create())
             ->ofType(LedgerAccountType::EXPENSE)
             ->state([
-                'currency_code' => $this->currency->code,
+                'currency_code' => $currency->code,
                 'name' => 'Other',
             ])
             ->create();
 
         $category = Category::factory()
             ->expense()
-            ->for($this->user)
+            ->for($user)
             ->state([
                 'name' => 'Housing',
             ])
@@ -149,25 +184,30 @@ describe(LedgerTransactionService::class, function (): void {
                     'amount' => 200,
                 ],
                 [
-                    'account_id' => $this->incomeAccount->id,
+                    'account_id' => $incomeAccount->id,
                     'amount' => -200,
                 ],
             ],
         );
 
-        expect(fn (): mixed => $this->service->create(
-            $this->user,
+        expect(fn (): mixed => $service->create(
+            $user,
             $data,
         ))->toThrow(LedgerIntegrityException::class, 'same user');
     });
 
-    it('persists metadata, memo, and categories when valid', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('persists metadata, memo, and categories when valid', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'assetAccount' => $assetAccount,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         $category = Category::factory()
             ->expense()
-            ->for($this->user)
+            ->for($user)
             ->state([
                 'name' => 'Housing',
             ])
@@ -183,20 +223,20 @@ describe(LedgerTransactionService::class, function (): void {
             ],
             entries: [
                 [
-                    'account_id' => $this->assetAccount->id,
+                    'account_id' => $assetAccount->id,
                     'amount' => -1_500,
                     'memo' => 'Rent payment',
                 ],
                 [
-                    'account_id' => $this->incomeAccount->id,
+                    'account_id' => $incomeAccount->id,
                     'amount' => 1_500,
                     'memo' => 'Rent offset',
                 ],
             ],
         );
 
-        $transaction = $this->service->create(
-            $this->user,
+        $transaction = $service->create(
+            $user,
             $data,
         );
 
@@ -207,12 +247,17 @@ describe(LedgerTransactionService::class, function (): void {
         expect($transaction->entries->last()->memo)->toBe('Rent offset');
     });
 
-    it('snapshots the budget assigned to referenced categories', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('snapshots the budget assigned to referenced categories', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'assetAccount' => $assetAccount,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         $budget = Budget::factory()
-            ->for($this->user)
+            ->for($user)
             ->state(['name' => 'Food'])
             ->create();
 
@@ -225,7 +270,7 @@ describe(LedgerTransactionService::class, function (): void {
 
         $category = Category::factory()
             ->expense()
-            ->for($this->user)
+            ->for($user)
             ->state([
                 'name' => 'Dining',
                 'budget_id' => $budget->id,
@@ -238,29 +283,34 @@ describe(LedgerTransactionService::class, function (): void {
             ],
             entries: [
                 [
-                    'account_id' => $this->assetAccount->id,
+                    'account_id' => $assetAccount->id,
                     'amount' => -1_000,
                 ],
                 [
-                    'account_id' => $this->incomeAccount->id,
+                    'account_id' => $incomeAccount->id,
                     'amount' => 1_000,
                 ],
             ],
         );
 
-        $transaction = $this->service->create(
-            $this->user,
+        $transaction = $service->create(
+            $user,
             $data,
         );
 
         expect($transaction->budget_period_id)->toBe($period->id);
     });
 
-    it('assigns budget period based on transaction category', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('assigns budget period based on transaction category', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'assetAccount' => $assetAccount,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
-        $foodBudget = Budget::factory()->for($this->user)->state(['name' => 'Food'])->create();
+        $foodBudget = Budget::factory()->for($user)->state(['name' => 'Food'])->create();
         $periodStart = Date::now()->startOfMonth();
 
         $period = BudgetPeriod::factory()
@@ -270,7 +320,7 @@ describe(LedgerTransactionService::class, function (): void {
 
         $foodCategory = Category::factory()
             ->expense()
-            ->for($this->user)
+            ->for($user)
             ->state(['budget_id' => $foodBudget->id])
             ->create();
 
@@ -280,32 +330,36 @@ describe(LedgerTransactionService::class, function (): void {
             ],
             entries: [
                 [
-                    'account_id' => $this->assetAccount->id,
+                    'account_id' => $assetAccount->id,
                     'amount' => -700,
                 ],
                 [
-                    'account_id' => $this->incomeAccount->id,
+                    'account_id' => $incomeAccount->id,
                     'amount' => 700,
                 ],
             ],
         );
 
-        $transaction = $this->service->create(
-            $this->user,
+        $transaction = $service->create(
+            $user,
             $data,
         );
 
         expect($transaction->budget_period_id)->toBe($period->id);
     });
 
-    it('calculates amount_base values when exchange rate is provided', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('calculates amount_base values when exchange rate is provided', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         $eur = Currency::factory()->create(['code' => 'EUR']);
 
         $eurAccount = LedgerAccount::factory()
-            ->for($this->user)
+            ->for($user)
             ->ofType(LedgerAccountType::ASSET)
             ->state(['currency_code' => 'EUR'])
             ->create();
@@ -322,21 +376,21 @@ describe(LedgerTransactionService::class, function (): void {
                     'currency_code' => 'EUR',
                 ],
                 [
-                    'account_id' => $this->incomeAccount->id,
+                    'account_id' => $incomeAccount->id,
                     'amount' => -100, // -100 USDT (base currency)
                 ],
             ]
         );
 
-        $transaction = $this->service->create(
-            $this->user,
+        $transaction = $service->create(
+            $user,
             $data,
         );
 
         expect($transaction->entries)->toHaveCount(2);
 
         $eurEntry = $transaction->entries->firstWhere('account_id', $eurAccount->id);
-        $baseEntry = $transaction->entries->firstWhere('account_id', $this->incomeAccount->id);
+        $baseEntry = $transaction->entries->firstWhere('account_id', $incomeAccount->id);
 
         // 92 EUR / 0.92 = 100 USDT base
         expect($eurEntry->amount_base)->toBe('100.000000');
@@ -344,9 +398,14 @@ describe(LedgerTransactionService::class, function (): void {
         expect($baseEntry->amount_base)->toBe('-100.000000');
     });
 
-    it('rejects categories that belong to another user', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('rejects categories that belong to another user', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'assetAccount' => $assetAccount,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         $foreignCategory = Category::factory()
             ->expense()
@@ -359,25 +418,30 @@ describe(LedgerTransactionService::class, function (): void {
             ],
             entries: [
                 [
-                    'account_id' => $this->assetAccount->id,
+                    'account_id' => $assetAccount->id,
                     'amount' => 200,
                 ],
                 [
-                    'account_id' => $this->incomeAccount->id,
+                    'account_id' => $incomeAccount->id,
                     'amount' => -200,
                 ],
             ],
         );
 
-        expect(fn (): mixed => $this->service->create(
-            $this->user,
+        expect(fn (): mixed => $service->create(
+            $user,
             $data,
         ))->toThrow(LedgerIntegrityException::class, 'category does not belong');
     });
 
-    it('rejects currency mismatches per entry', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('rejects currency mismatches per entry', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'assetAccount' => $assetAccount,
+            'incomeAccount' => $incomeAccount,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         Currency::factory()
             ->state([
@@ -387,37 +451,40 @@ describe(LedgerTransactionService::class, function (): void {
 
         $data = $makeTransactionData(entries: [
             [
-                'account_id' => $this->assetAccount->id,
+                'account_id' => $assetAccount->id,
                 'amount' => 300,
                 'currency_code' => 'EUR',
             ],
             [
-                'account_id' => $this->incomeAccount->id,
+                'account_id' => $incomeAccount->id,
                 'amount' => -300,
             ],
         ]);
 
-        expect(fn (): mixed => $this->service->create(
-            $this->user,
+        expect(fn (): mixed => $service->create(
+            $user,
             $data,
         ))->toThrow(LedgerIntegrityException::class, 'currency');
     });
 
-    it('returns the existing transaction when an idempotency key is reused', function (): void {
-        /** @var callable $makeTransactionData */
-        $makeTransactionData = $this->makeTransactionData;
+    it('returns the existing transaction when an idempotency key is reused', function () use ($makeContext): void {
+        [
+            'service' => $service,
+            'user' => $user,
+            'makeTransactionData' => $makeTransactionData,
+        ] = $makeContext();
 
         $data = $makeTransactionData(transactionOverrides: [
             'idempotency_key' => 'dup-123',
         ]);
 
-        $first = $this->service->create(
-            $this->user,
+        $first = $service->create(
+            $user,
             $data,
         );
 
-        $second = $this->service->create(
-            $this->user,
+        $second = $service->create(
+            $user,
             $data,
         );
 
