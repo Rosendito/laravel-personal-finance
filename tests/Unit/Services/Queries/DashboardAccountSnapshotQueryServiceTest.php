@@ -78,3 +78,4 @@ describe(DashboardAccountSnapshotQueryService::class, function (): void {
         expect($snapshot->liabilitiesOwed)->toBe('600.000000');
     });
 });
+

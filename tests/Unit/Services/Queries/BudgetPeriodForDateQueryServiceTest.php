@@ -53,3 +53,4 @@ describe(BudgetPeriodForDateQueryService::class, function (): void {
         expect($resolved)->toBeNull();
     });
 });
+
