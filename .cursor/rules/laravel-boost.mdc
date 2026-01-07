@@ -30,6 +30,14 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
 - Check for existing components to reuse before writing a new one.
 
+### File Placement & Contextual Namespaces
+
+- When creating Traits, Interfaces (Contracts), DTOs (Laravel Data), Rules, Support classes, and similar, always create them under `app/` (e.g. `app/Concerns`, `app/Contracts`, `app/Data`, `app/Rules`, `app/Support`).
+- Always use contextual namespaces that reflect the domain / feature area.
+    - Example: a generic Filament contract should live under `app/Contracts/Filament/...`.
+    - Example: a contract specifically for Filament Pages should live under `app/Contracts/Filament/Pages/...`.
+- Before creating a new folder / namespace segment, always inspect the existing directory structure in that area to match current conventions.
+
 ## Verification Scripts
 
 - Do not create verification scripts or tinker when tests cover that functionality and prove it works. Unit and feature tests are more important.
@@ -41,7 +49,8 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 ## Frontend Bundling
 
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+- This project uses Volta to pin Node / package manager versions. Prefer using the pinned toolchain.
+- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `pnpm run build`, `pnpm run dev`, or `composer run dev`. Ask them.
 
 ## Replies
 
@@ -128,7 +137,7 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 ## Enums
 
-- Typically, keys in an Enum should be TitleCase. For example: `FavoritePerson`, `BestLake`, `Monthly`.
+- Typically, keys in an Enum should be UPPERCASE_WITH_UNDERSCORES. For example: `FAVORITE_PERSON`, `BEST_LAKE`, `MONTHLY`.
 
 === laravel/core rules ===
 
@@ -237,10 +246,22 @@ protected function isAccessible(User $user, ?string $path = null): bool
   });
   </code-snippet>
 
+### Pest `describe()` Structure (Required)
+
+- Always wrap tests in `describe()` and keep exactly **one** `describe()` per test file.
+- For Unit tests (and Feature tests for controllers), use the class under test as the `describe()` name:
+    - Example: `describe(SomeAction::class, function () { ... })`
+    - Example: `describe(User::class, function () { ... })`
+    - Example: `describe(SomeController::class, function () { ... })`
+- This also applies to Filament Resource Page tests: use the Page / Resource / Action class as the `describe()` name.
+- Exception: in a Feature test that is intentionally a “happy path process” test, the `describe()` name may describe the process instead of a class.
+- If a large file needs to be split into multiple files focusing on a subset of behavior, suffix the class-based describe with a short label:
+    - Example: `describe(User::class . ' - Some feature', function () { ... })`
+
 ### Running Tests
 
 - Run the minimal number of tests using an appropriate filter before finalizing code edits.
-- To run all tests: `php artisan test`.
+- To run the full suite (tests + linters + phpstan + coverage, etc.): `composer test`.
 - To run all tests in a file: `php artisan test tests/Feature/ExampleTest.php`.
 - To filter on a particular test name: `php artisan test --filter=testName` (recommended after making a change to a related file).
 - When the tests relating to your changes are passing, ask the user if they would like to run the entire test suite to ensure everything is still passing.
@@ -252,10 +273,16 @@ protected function isAccessible(User $user, ?string $path = null): bool
   it('returns all', function () {
   $response = $this->postJson('/api/docs', []);
 
-        $response->assertSuccessful();
+                          $response->assertSuccessful();
 
     });
     </code-snippet>
+
+### Pest Style: Avoid `$this` in Tests
+
+- Prefer Pest/Laravel function helpers over `$this->...` calls in tests.
+- Example: prefer `actingAs($user)->get('/dashboard')` over `$this->actingAs($user)->get('/dashboard')`.
+- You may need to import helpers, e.g. `use function Pest\Laravel\{actingAs};`.
 
 ### Mocking
 
@@ -335,13 +362,13 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 
 - When listing items, use gap utilities for spacing, don't use margins.
 
-      <code-snippet name="Valid Flex Gap Spacing Example" lang="html">
-          <div class="flex gap-8">
-              <div>Superior</div>
-              <div>Michigan</div>
-              <div>Erie</div>
-          </div>
-      </code-snippet>
+                        <code-snippet name="Valid Flex Gap Spacing Example" lang="html">
+                            <div class="flex gap-8">
+                                <div>Superior</div>
+                                <div>Michigan</div>
+                                <div>Erie</div>
+                            </div>
+                        </code-snippet>
 
 ### Dark Mode
 
@@ -389,5 +416,23 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 
 - Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
 - Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test` with a specific filename or filter.
-- DONT DO TESTS FOR FILAMENT
+- When you need to run the entire suite (tests + linters + phpstan + coverage, etc.), use `composer test`.
+
+## Unit Tests: Prefer Invariants Over "Response" Snapshots
+
+- Unit tests should validate the **contract** (structure + key behaviors) of a unit, not duplicate/“snapshot” an entire response payload that is expected to change over time.
+- Avoid asserting exact arrays/labels that come from **volatile data sources** (translations, timezone lists, locale lists, config-driven static lists, etc.) unless you explicitly make the source deterministic inside the test.
+
+### Good Targets for Unit Assertions
+
+- **Structure**: correct return types and shapes (e.g. `array<string, string>` for select options).
+- **Invariants**: ordering rules (e.g. `ksort()` on keys), presence of keys derived from explicit inputs (like config), and deterministic fallback rules (e.g. “missing label falls back to uppercase locale code”).
+- **Behavior, not data**: verify that “when translation labels are missing/non-array, we fall back”, not that “English/Spanish” are the exact values coming from a real language file.
+
+### Controlling Variability (When Exact Values Matter)
+
+- If you need exact expectations, **inject/stub the data source in the test**:
+    - Set `config()` explicitly.
+    - Use `Translator::addLines()` (or equivalent) to provide a known translation map.
+- Do not couple unit tests to `resources/lang/*` content unless the goal of the test is explicitly to validate translation resources (that should typically be a separate, dedicated test).
   </laravel-boost-guidelines>

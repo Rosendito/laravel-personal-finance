@@ -11,7 +11,7 @@ describe(ExchangeCurrencyPair::class, function (): void {
         $base = Currency::query()->firstOrCreate(['code' => 'USD'], ['precision' => 2]);
         $quote = Currency::query()->firstOrCreate(['code' => 'VES'], ['precision' => 2]);
 
-        $pair = ExchangeCurrencyPair::factory()->create([
+        $pair = ExchangeCurrencyPair::query()->updateOrCreate([
             'base_currency_code' => $base->code,
             'quote_currency_code' => $quote->code,
         ]);
