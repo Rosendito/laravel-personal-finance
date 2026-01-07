@@ -8,7 +8,7 @@ use App\Models\Currency;
 use App\Models\ExchangeCurrencyPair;
 use App\Models\ExchangeSource;
 use App\Services\ExchangeRates\Fetchers\BcvRateFetcher;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Http;
 
 describe(BcvRateFetcher::class, function (): void {
@@ -30,7 +30,7 @@ describe(BcvRateFetcher::class, function (): void {
             ],
         );
 
-        $rates = (new BcvRateFetcher())->fetch($source);
+        $rates = new BcvRateFetcher()->fetch($source);
 
         expect($rates)->toHaveCount(2);
 
@@ -40,14 +40,14 @@ describe(BcvRateFetcher::class, function (): void {
         expect($usd)->not->toBeNull()
             ->and($usd->quoteCurrencyCode)->toBe('VES')
             ->and($usd->rate)->toBe('311.88140000')
-            ->and($usd->effectiveAt->toDateTimeString())->toBe(Carbon::parse('2026-01-07 00:00:00')->toDateTimeString())
+            ->and($usd->effectiveAt->toDateTimeString())->toBe(Date::parse('2026-01-07 00:00:00')->toDateTimeString())
             ->and($usd->retrievedAt->toDateTimeString())->toBe(now()->toDateTimeString())
             ->and($usd->metadata)->toMatchArray(['url' => 'https://www.bcv.org.ve/', 'strategy' => 'scraper']);
 
         expect($eur)->not->toBeNull()
             ->and($eur->quoteCurrencyCode)->toBe('VES')
             ->and($eur->rate)->toBe('364.83886172')
-            ->and($eur->effectiveAt->toDateTimeString())->toBe(Carbon::parse('2026-01-07 00:00:00')->toDateTimeString())
+            ->and($eur->effectiveAt->toDateTimeString())->toBe(Date::parse('2026-01-07 00:00:00')->toDateTimeString())
             ->and($eur->retrievedAt->toDateTimeString())->toBe(now()->toDateTimeString())
             ->and($eur->metadata)->toMatchArray(['url' => 'https://www.bcv.org.ve/', 'strategy' => 'scraper']);
     });
@@ -78,7 +78,7 @@ describe(BcvRateFetcher::class, function (): void {
             ],
         );
 
-        $rates = (new BcvRateFetcher())->fetch($source, RequestedPairsData::forPairs($usdVes));
+        $rates = new BcvRateFetcher()->fetch($source, RequestedPairsData::forPairs($usdVes));
 
         expect($rates)->toHaveCount(1)
             ->and($rates->first()?->pairKey())->toBe('USD/VES');

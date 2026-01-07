@@ -9,8 +9,8 @@ use App\Data\ExchangeRates\FetchedExchangeRateData;
 use App\Data\ExchangeRates\RequestedPairsData;
 use App\Models\ExchangeSource;
 use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Symfony\Component\DomCrawler\Crawler;
@@ -71,9 +71,9 @@ final class BcvRateFetcher implements ExchangeRateFetcher
         throw_unless(is_string($content) && $content !== '', RuntimeException::class, 'No BCV effective date content found on the page.');
 
         $date = mb_substr($content, 0, 10);
-        $effectiveAt = Carbon::createFromFormat('Y-m-d', $date);
+        $effectiveAt = Date::createFromFormat('Y-m-d', $date);
 
-        throw_unless($effectiveAt instanceof Carbon, RuntimeException::class, "Could not parse BCV effective date: {$content}");
+        throw_unless($effectiveAt instanceof CarbonInterface, RuntimeException::class, "Could not parse BCV effective date: {$content}");
 
         return $effectiveAt->startOfDay();
     }
@@ -115,7 +115,7 @@ final class BcvRateFetcher implements ExchangeRateFetcher
 
         throw_unless(is_numeric($normalized), RuntimeException::class, "Could not parse BCV rate: {$rateString}");
 
-        return (string) $normalized;
+        return $normalized;
     }
 
     private function buildRate(

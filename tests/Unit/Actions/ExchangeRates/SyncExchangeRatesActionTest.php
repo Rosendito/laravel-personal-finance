@@ -11,7 +11,10 @@ use App\Models\ExchangeCurrencyPair;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeSource;
 use App\Services\ExchangeRates\Fetchers\BcvRateFetcher;
+use App\Services\ExchangeRates\Fetchers\BinanceRateFetcher;
+use App\Services\ExchangeRates\RateCalculators\BestPriceRateCalculator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Http;
 use Tests\Mocks\ExchangeRates\FakeEmptyFetcher;
 use Tests\Mocks\ExchangeRates\FakeUsdVesFetcher;
@@ -23,23 +26,28 @@ describe(SyncExchangeRatesAction::class, function (): void {
         }
     };
 
-    $upsertPair = function (string $baseCurrencyCode, string $quoteCurrencyCode): ExchangeCurrencyPair {
-        return ExchangeCurrencyPair::query()->updateOrCreate([
-            'base_currency_code' => $baseCurrencyCode,
-            'quote_currency_code' => $quoteCurrencyCode,
-        ]);
-    };
+    $upsertPair = (fn (string $baseCurrencyCode, string $quoteCurrencyCode): ExchangeCurrencyPair => ExchangeCurrencyPair::query()->updateOrCreate([
+        'base_currency_code' => $baseCurrencyCode,
+        'quote_currency_code' => $quoteCurrencyCode,
+    ]));
 
-    $upsertBcvSource = function (): ExchangeSource {
-        return ExchangeSource::query()->updateOrCreate(
-            ['key' => ExchangeSourceKey::BCV->value],
-            [
-                'name' => 'Banco Central de Venezuela',
-                'type' => 'official',
-                'metadata' => [],
-            ],
-        );
-    };
+    $upsertBcvSource = (fn (): ExchangeSource => ExchangeSource::query()->updateOrCreate(
+        ['key' => ExchangeSourceKey::BCV->value],
+        [
+            'name' => 'Banco Central de Venezuela',
+            'type' => 'official',
+            'metadata' => [],
+        ],
+    ));
+
+    $upsertBinanceSource = (fn (): ExchangeSource => ExchangeSource::query()->updateOrCreate(
+        ['key' => ExchangeSourceKey::BINANCE_P2P->value],
+        [
+            'name' => 'Binance P2P',
+            'type' => 'api',
+            'metadata' => [],
+        ],
+    ));
 
     $attachPairsToSource = function (ExchangeSource $source, ExchangeCurrencyPair ...$pairs): void {
         foreach ($pairs as $pair) {
@@ -57,17 +65,31 @@ describe(SyncExchangeRatesAction::class, function (): void {
         ]);
     };
 
+    $fakeBinanceFixtureHttpResponse = function (): array {
+        $json = file_get_contents(base_path('tests/Fixtures/Http/binance-p2p-usdt-ves.json'));
+
+        expect($json)->toBeString()->not->toBeEmpty();
+
+        Http::fake([
+            'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search' => Http::response($json, 200),
+        ]);
+
+        $decoded = json_decode((string) $json, true);
+
+        expect($decoded)->toBeArray();
+
+        return $decoded;
+    };
+
     /**
      * @return array<string, ExchangeRate>
      */
-    $ratesByPairKey = function (ExchangeSource $source): array {
-        return ExchangeRate::query()
-            ->with('exchangeCurrencyPair')
-            ->where('exchange_source_id', $source->id)
-            ->get()
-            ->keyBy(fn (ExchangeRate $rate): string => "{$rate->exchangeCurrencyPair->base_currency_code}/{$rate->exchangeCurrencyPair->quote_currency_code}")
-            ->all();
-    };
+    $ratesByPairKey = (fn (ExchangeSource $source): array => ExchangeRate::query()
+        ->with('exchangeCurrencyPair')
+        ->where('exchange_source_id', $source->id)
+        ->get()
+        ->keyBy(fn (ExchangeRate $rate): string => "{$rate->exchangeCurrencyPair->base_currency_code}/{$rate->exchangeCurrencyPair->quote_currency_code}")
+        ->all());
 
     $expectPersistedRateForPair = function (ExchangeRate $rate, string $expectedRate, string $expectedEffectiveAt): void {
         expect((string) $rate->rate)->toBe($expectedRate)
@@ -182,5 +204,73 @@ describe(SyncExchangeRatesAction::class, function (): void {
 
         $expectPersistedRateForPair($usd, '311.881400000000000000', $expectedEffectiveAt);
         $expectPersistedRateForPair($eur, '364.838861720000000000', $expectedEffectiveAt);
+    });
+
+    it('persists Binance P2P USDT/VES rate using the real fetcher', function () use (
+        $attachPairsToSource,
+        $ensureCurrencies,
+        $fakeBinanceFixtureHttpResponse,
+        $ratesByPairKey,
+        $upsertBinanceSource,
+        $upsertPair,
+    ): void {
+        $now = Date::parse('2026-01-07 12:00:00');
+        Date::setTestNow($now);
+
+        $decoded = $fakeBinanceFixtureHttpResponse();
+
+        $prices = collect($decoded['data'] ?? [])
+            ->map(fn (array $row): mixed => data_get($row, 'adv.price'))
+            ->filter(fn (mixed $price): bool => is_numeric($price))
+            ->map(fn (mixed $price): float => (float) $price)
+            ->values();
+
+        expect($prices)->not->toBeEmpty();
+
+        $expectedMin = (float) $prices->min();
+        $expectedRate = number_format($expectedMin, 18, '.', '');
+
+        $ensureCurrencies('USDT', 'VES');
+
+        $usdtVes = $upsertPair('USDT', 'VES');
+
+        $source = $upsertBinanceSource();
+
+        config()->set('finance.exchange_rates.fetchers', [
+            ExchangeSourceKey::BINANCE_P2P->value => BinanceRateFetcher::class,
+        ]);
+
+        config()->set('finance.exchange_rates.rate_calculators.by_source', [
+            ExchangeSourceKey::BINANCE_P2P->value => BestPriceRateCalculator::class,
+        ]);
+
+        $attachPairsToSource($source, $usdtVes);
+
+        resolve(SyncExchangeRatesAction::class)->execute(
+            $source,
+            RequestedPairsData::forPairs($usdtVes),
+        );
+
+        expect(ExchangeRate::query()->count())->toBe(1);
+
+        $rates = $ratesByPairKey($source);
+
+        expect(array_keys($rates))->toMatchArray(['USDT/VES']);
+
+        $rate = $rates['USDT/VES'];
+
+        expect((string) $rate->rate)->toBe($expectedRate)
+            ->and($rate->effective_at->toDateTimeString())->toBe($now->toDateTimeString())
+            ->and($rate->retrieved_at?->toDateTimeString())->toBe($now->toDateTimeString())
+            ->and($rate->is_estimated)->toBeFalse()
+            ->and($rate->meta)->toMatchArray([
+                'strategy' => 'best_price',
+                'url' => 'https://p2p.binance.com',
+                'endpoint' => '/bapi/c2c/v2/friendly/c2c/adv/search',
+                'asset' => 'USDT',
+                'fiat' => 'VES',
+            ]);
+
+        Date::setTestNow();
     });
 });

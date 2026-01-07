@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\ExchangeSourceKey;
+use App\Services\ExchangeRates\Fetchers\BcvRateFetcher;
+use App\Services\ExchangeRates\Fetchers\BinanceRateFetcher;
+use App\Services\ExchangeRates\RateCalculators\BestPriceRateCalculator;
+
 return [
     'currency' => [
         'default' => env('APP_CURRENCY', 'USDT'),
@@ -16,7 +21,8 @@ return [
          * 'bcv' => \App\Services\ExchangeRates\Fetchers\BcvRateFetcher::class,
          */
         'fetchers' => [
-            'bcv' => App\Services\ExchangeRates\Fetchers\BcvRateFetcher::class,
+            ExchangeSourceKey::BCV->value => BcvRateFetcher::class,
+            ExchangeSourceKey::BINANCE_P2P->value => BinanceRateFetcher::class,
         ],
 
         /**
@@ -26,7 +32,7 @@ return [
         'rate_calculators' => [
             'default' => null,
             'by_source' => [
-                //
+                ExchangeSourceKey::BINANCE_P2P->value => BestPriceRateCalculator::class,
             ],
             'by_pair' => [
                 //
