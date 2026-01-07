@@ -16,7 +16,7 @@ return [
          * 'bcv' => \App\Services\ExchangeRates\Fetchers\BcvRateFetcher::class,
          */
         'fetchers' => [
-            //
+            'bcv' => App\Services\ExchangeRates\Fetchers\BcvRateFetcher::class,
         ],
 
         /**
