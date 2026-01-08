@@ -69,8 +69,8 @@ final class SpendingByCategoryChart extends ChartWidget
                 'labels' => ['Sin datos'],
             ];
         }
-        $labels = $totals->map(static fn ($row): string => $row->name)->all();
-        $data = $totals->map(static fn ($row): float => (float) $row->total)->all();
+        $labels = $totals->map(static fn (CategoryTotalData $row): string => $row->name)->all();
+        $data = $totals->map(static fn (CategoryTotalData $row): float => (float) $row->total)->all();
         $colors = $this->resolveColors($totals->all());
 
         return [

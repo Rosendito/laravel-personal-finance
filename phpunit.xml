@@ -19,6 +19,14 @@
         <include>
             <directory>app</directory>
         </include>
+        <exclude>
+            <directory suffix=".php">./app/Filament</directory>
+            <directory suffix=".php">./app/Providers/Filament</directory>
+            <directory suffix=".php">./app/Console</directory>
+            <directory suffix=".php">./app/Actions/Debts</directory>
+            <directory suffix=".php">./app/Services/Queries</directory>
+            <directory suffix=".php">./app/Actions/Currencies</directory>
+        </exclude>
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>

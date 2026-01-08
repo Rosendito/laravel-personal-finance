@@ -12,7 +12,7 @@ describe(LedgerAccount::class, function (): void {
         // 1. Setup: Ensure USD (default) exists (handled by global setup mostly, but consistent here)
         // Currency::factory()->create(['code' => 'USD']); // REMOVED to avoid dupes with global setup
 
-        Currency::factory()->create(['code' => 'EUR']);
+        Currency::query()->updateOrCreate(['code' => 'EUR'], ['precision' => 2]);
 
         // 2. Create User -> Should trigger InitializeUserSpace -> Creates USD accounts
         $user = User::factory()->create();

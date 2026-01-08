@@ -15,7 +15,7 @@ final class DebtLoanStat extends Stat
 
     private ?string $actionName = null;
 
-    public static function make(string|Htmlable $label, $value): static
+    public static function make(string|Htmlable $label, mixed $value): static
     {
         return new self($label, $value);
     }

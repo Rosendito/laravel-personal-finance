@@ -97,7 +97,7 @@ final class CategoryForm
                             ->live()
                             ->nullable()
                             ->helperText('Agrupa categorías jerárquicamente.')
-                            ->disableOptionWhen(static function (int|string $value, $label, ?Category $record): bool {
+                            ->disableOptionWhen(static function (int|string $value, mixed $label, ?Category $record): bool {
                                 if (! $record instanceof Category) {
                                     return false;
                                 }

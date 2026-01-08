@@ -46,7 +46,7 @@ final class BudgetsTable
                     ->label('Spent')
                     ->numeric(2)
                     ->state(static fn (Budget $record): string => $record->currentPeriod?->spent_amount ?? '0')
-                    ->color(static function (Budget $record, $state): string {
+                    ->color(static function (Budget $record, mixed $state): string {
                         $period = $record->currentPeriod;
 
                         if ($period === null) {
@@ -70,7 +70,7 @@ final class BudgetsTable
                     ->label('Remaining')
                     ->numeric(2)
                     ->state(static fn (Budget $record): string => $record->currentPeriod?->remaining_amount ?? '0')
-                    ->color(static function (Budget $record, $state): string {
+                    ->color(static function (Budget $record, mixed $state): string {
                         $remaining = (float) $state;
 
                         if ($remaining < 0) {
@@ -83,7 +83,7 @@ final class BudgetsTable
                     ->label('% Used')
                     ->state(static fn (Budget $record): string => $record->currentPeriod?->usage_percent ?? '0')
                     ->suffix('%')
-                    ->color(static function (Budget $record, $state): string {
+                    ->color(static function (Budget $record, mixed $state): string {
                         $percent = (float) $state;
 
                         if ($percent > 100) {

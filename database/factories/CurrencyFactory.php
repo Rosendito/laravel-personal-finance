@@ -19,8 +19,21 @@ final class CurrencyFactory extends Factory
      */
     public function definition(): array
     {
+        $code = null;
+
+        for ($attempts = 0; $attempts < 25; $attempts++) {
+            $candidate = mb_strtoupper((string) fake()->currencyCode());
+
+            if (! Currency::query()->where('code', $candidate)->exists()) {
+                $code = $candidate;
+                break;
+            }
+        }
+
+        $code ??= 'ZZZ';
+
         return [
-            'code' => mb_strtoupper(fake()->unique()->currencyCode()),
+            'code' => $code,
             'precision' => fake()->numberBetween(0, 4),
         ];
     }

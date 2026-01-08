@@ -8,6 +8,7 @@ use App\Data\Dashboard\CategoryTotalData;
 use App\Enums\LedgerAccountType;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -28,7 +29,7 @@ final class DashboardSpendingByCategoryQueryService
             ->leftJoin('categories as c', 'c.id', '=', 't.category_id')
             ->where('t.user_id', $user->id)
             ->where('a.type', LedgerAccountType::EXPENSE->value)
-            ->where(static function ($query): void {
+            ->where(static function (QueryBuilder $query): void {
                 $query
                     ->whereNull('t.category_id')
                     ->orWhere('c.is_reportable', true);

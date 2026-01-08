@@ -7,6 +7,7 @@ namespace App\Services\Queries;
 use App\Enums\CategoryType;
 use App\Enums\LedgerAccountType;
 use App\Models\BudgetPeriod;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 
 final class BudgetPeriodSpentQueryService
@@ -14,9 +15,9 @@ final class BudgetPeriodSpentQueryService
     public function total(BudgetPeriod $period): string
     {
         $categoryIds = DB::table('categories')
-            ->where(function ($query) use ($period): void {
+            ->where(function (QueryBuilder $query) use ($period): void {
                 $query->where('budget_id', $period->budget_id)
-                    ->orWhereIn('parent_id', function ($subQuery) use ($period): void {
+                    ->orWhereIn('parent_id', function (QueryBuilder $subQuery) use ($period): void {
                         $subQuery->select('id')
                             ->from('categories')
                             ->where('budget_id', $period->budget_id);

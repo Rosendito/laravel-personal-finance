@@ -10,7 +10,7 @@ use App\Models\User;
 
 describe('LedgerAccount Fundamental Accounts', function (): void {
     it('creates fundamental accounts when a new account is created', function (): void {
-        Currency::factory()->create(['code' => 'EUR']);
+        Currency::query()->updateOrCreate(['code' => 'EUR'], ['precision' => 2]);
         $user = User::factory()->create();
 
         // Create a new account in EUR
@@ -38,8 +38,8 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
     });
 
     it('creates fundamental accounts when currency is updated', function (): void {
-        Currency::factory()->create(['code' => 'EUR']);
-        Currency::factory()->create(['code' => 'GBP']);
+        Currency::query()->updateOrCreate(['code' => 'EUR'], ['precision' => 2]);
+        Currency::query()->updateOrCreate(['code' => 'GBP'], ['precision' => 2]);
 
         $user = User::factory()->create();
 
@@ -72,7 +72,7 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
     });
 
     it('does not create fundamental accounts if currency did not change', function (): void {
-        Currency::factory()->create(['code' => 'EUR']);
+        Currency::query()->updateOrCreate(['code' => 'EUR'], ['precision' => 2]);
         $user = User::factory()->create();
 
         $account = LedgerAccount::factory()
@@ -99,7 +99,7 @@ describe('LedgerAccount Fundamental Accounts', function (): void {
     });
 
     it('does not duplicate fundamental accounts if they already exist', function (): void {
-        Currency::factory()->create(['code' => 'EUR']);
+        Currency::query()->updateOrCreate(['code' => 'EUR'], ['precision' => 2]);
         $user = User::factory()->create();
 
         // Manually create fundamental accounts

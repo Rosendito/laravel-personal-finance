@@ -10,6 +10,7 @@ use App\Services\Queries\BudgetPeriodForDateQueryService;
 use Carbon\CarbonImmutable;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 final class BudgetWidget extends StatsOverviewWidget
@@ -41,7 +42,7 @@ final class BudgetWidget extends StatsOverviewWidget
             ->where('is_active', true)
             ->unless(
                 $anchorDate instanceof CarbonImmutable,
-                static fn ($query) => $query->with('currentPeriod'),
+                static fn (Builder $query): Builder => $query->with('currentPeriod'),
             )
             ->get()
             ->map(function (Budget $budget) use ($currency, $anchorDate, $periodResolver): ?BudgetStat {
