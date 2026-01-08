@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Http;
 use Tests\Mocks\ExchangeRates\FakeEmptyFetcher;
 use Tests\Mocks\ExchangeRates\FakeUsdVesFetcher;
+use Tests\Mocks\ExchangeRates\FakeUsdVesFetcherChanged;
 
 describe(SyncExchangeRatesAction::class, function (): void {
     $ensureCurrencies = function (string ...$codes): void {
@@ -124,6 +125,87 @@ describe(SyncExchangeRatesAction::class, function (): void {
             ->and($rate->effective_at->toDateTimeString())->toBe(now()->toDateTimeString())
             ->and($rate->is_estimated)->toBeFalse()
             ->and($rate->meta)->toMatchArray(['strategy' => 'fixed']);
+    });
+
+    it('does not persist a new snapshot when the rate has not changed', function () use ($ensureCurrencies, $upsertPair, $upsertBcvSource, $attachPairsToSource): void {
+        $now1 = Date::parse('2026-01-07 10:00:00');
+        Date::setTestNow($now1);
+
+        $ensureCurrencies('USD', 'VES');
+
+        $pair = $upsertPair('USD', 'VES');
+        $source = $upsertBcvSource();
+
+        config()->set('finance.exchange_rates.fetchers', [
+            ExchangeSourceKey::BCV->value => FakeUsdVesFetcher::class,
+        ]);
+
+        $attachPairsToSource($source, $pair);
+
+        resolve(SyncExchangeRatesAction::class)->execute($source);
+
+        expect(ExchangeRate::query()->count())->toBe(1);
+
+        $first = ExchangeRate::query()->first();
+        expect($first)->not->toBeNull()
+            ->and($first->effective_at->toDateTimeString())->toBe($now1->toDateTimeString())
+            ->and($first->retrieved_at?->toDateTimeString())->toBe($now1->toDateTimeString());
+
+        $now2 = $now1->addMinutes(5);
+        Date::setTestNow($now2);
+
+        resolve(SyncExchangeRatesAction::class)->execute($source);
+
+        expect(ExchangeRate::query()->count())->toBe(1);
+
+        $still = ExchangeRate::query()->first();
+        expect($still)->not->toBeNull()
+            ->and($still->id)->toBe($first->id)
+            ->and($still->effective_at->toDateTimeString())->toBe($now1->toDateTimeString())
+            ->and($still->retrieved_at?->toDateTimeString())->toBe($now1->toDateTimeString());
+
+        Date::setTestNow();
+    });
+
+    it('persists a new snapshot when the rate changes', function () use ($ensureCurrencies, $upsertPair, $upsertBcvSource, $attachPairsToSource): void {
+        $now1 = Date::parse('2026-01-07 10:00:00');
+        Date::setTestNow($now1);
+
+        $ensureCurrencies('USD', 'VES');
+
+        $pair = $upsertPair('USD', 'VES');
+        $source = $upsertBcvSource();
+
+        config()->set('finance.exchange_rates.fetchers', [
+            ExchangeSourceKey::BCV->value => FakeUsdVesFetcher::class,
+        ]);
+
+        $attachPairsToSource($source, $pair);
+
+        resolve(SyncExchangeRatesAction::class)->execute($source);
+
+        $now2 = $now1->addMinutes(5);
+        Date::setTestNow($now2);
+
+        config()->set('finance.exchange_rates.fetchers', [
+            ExchangeSourceKey::BCV->value => FakeUsdVesFetcherChanged::class,
+        ]);
+
+        resolve(SyncExchangeRatesAction::class)->execute($source);
+
+        expect(ExchangeRate::query()->count())->toBe(2);
+
+        $latest = ExchangeRate::query()
+            ->orderByDesc('id')
+            ->first();
+
+        expect($latest)->not->toBeNull()
+            ->and((string) $latest->rate)->toBe('40.000000000000000000')
+            ->and($latest->effective_at->toDateTimeString())->toBe($now2->toDateTimeString())
+            ->and($latest->retrieved_at?->toDateTimeString())->toBe($now2->toDateTimeString())
+            ->and($latest->meta)->toMatchArray(['strategy' => 'fixed_changed']);
+
+        Date::setTestNow();
     });
 
     it('throws when requesting a pair not supported by the source', function () use ($ensureCurrencies, $upsertPair, $upsertBcvSource): void {

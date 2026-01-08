@@ -11,8 +11,10 @@ use App\Models\ExchangeCurrencyPair;
 use App\Models\ExchangeRate;
 use App\Models\ExchangeSource;
 use App\Services\ExchangeRates\ExchangeRateFetcherResolver;
+use Brick\Math\BigDecimal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 final readonly class SyncExchangeRatesAction
 {
@@ -64,19 +66,43 @@ final readonly class SyncExchangeRatesAction
 
         $this->assertPairSupported($source, $pair);
 
-        return ExchangeRate::query()->updateOrCreate(
-            [
-                'exchange_currency_pair_id' => $pair->id,
-                'exchange_source_id' => $source->id,
-                'effective_at' => $rate->effectiveAt,
-            ],
-            [
-                'rate' => $rate->rate,
-                'retrieved_at' => $rate->retrievedAt,
-                'is_estimated' => $rate->isEstimated,
-                'meta' => $rate->metadata,
-            ],
-        );
+        $latestRate = ExchangeRate::query()
+            ->where('exchange_currency_pair_id', $pair->id)
+            ->where('exchange_source_id', $source->id)
+            ->orderByDesc('effective_at')
+            ->orderByDesc('retrieved_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($latestRate instanceof ExchangeRate && $this->isSameRate((string) $latestRate->rate, $rate->rate)) {
+            return $latestRate;
+        }
+
+        return ExchangeRate::query()->create([
+            'exchange_currency_pair_id' => $pair->id,
+            'exchange_source_id' => $source->id,
+            'rate' => $rate->rate,
+            'effective_at' => $rate->effectiveAt,
+            'retrieved_at' => $rate->retrievedAt,
+            'is_estimated' => $rate->isEstimated,
+            'meta' => $rate->metadata,
+        ]);
+    }
+
+    private function isSameRate(string $a, string $b): bool
+    {
+        $a = mb_trim($a);
+        $b = mb_trim($b);
+
+        if ($a === '' || $b === '') {
+            return false;
+        }
+
+        try {
+            return BigDecimal::of($a)->isEqualTo(BigDecimal::of($b));
+        } catch (Throwable) {
+            return $a === $b;
+        }
     }
 
     private function assertRequestedPairsSupported(ExchangeSource $source, RequestedPairsData $requestedPairs): void
