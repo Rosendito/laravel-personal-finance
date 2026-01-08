@@ -100,7 +100,7 @@ final readonly class BinanceRateFetcher implements ExchangeRateFetcher
 
         $metadataTradeType = data_get($source->metadata, "binance_p2p.trade_type.by_pair.{$pairKey}", data_get($source->metadata, 'binance_p2p.trade_type.default'));
 
-        $tradeType = $metadataTradeType ?? 'BUY';
+        $tradeType = $metadataTradeType ?? 'SELL';
 
         return mb_strtoupper((string) $tradeType);
     }
