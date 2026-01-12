@@ -54,6 +54,8 @@ final class BestPriceRateCalculator implements RateCalculator
 
     private function resolveTradeType(Collection $quotes): ?string
     {
+        return 'SELL';
+
         $types = $quotes
             ->map(fn (array $quote): mixed => data_get($quote, 'trade_type'))
             ->filter(fn (mixed $type): bool => is_string($type) && $type !== '')
@@ -65,7 +67,7 @@ final class BestPriceRateCalculator implements RateCalculator
             return $types->first();
         }
 
-        return null;
+        return 'SELL';
     }
 
     /**

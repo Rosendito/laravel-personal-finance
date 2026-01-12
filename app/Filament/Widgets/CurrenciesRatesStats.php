@@ -17,7 +17,7 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
 {
     public ?string $error = null;
 
-    protected ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '30s';
 
     protected function getStats(): array
     {
@@ -174,26 +174,6 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
     private function updatedAtForRate(ExchangeRate $rate): CarbonInterface
     {
         return $rate->retrieved_at ?? $rate->effective_at;
-    }
-
-    private function latestUpdatedAt(?ExchangeRate $a, ?ExchangeRate $b): ?CarbonInterface
-    {
-        if (! $a instanceof ExchangeRate && ! $b instanceof ExchangeRate) {
-            return null;
-        }
-
-        if (! $a instanceof ExchangeRate) {
-            return $this->updatedAtForRate($b);
-        }
-
-        if (! $b instanceof ExchangeRate) {
-            return $this->updatedAtForRate($a);
-        }
-
-        $aAt = $this->updatedAtForRate($a);
-        $bAt = $this->updatedAtForRate($b);
-
-        return $aAt->greaterThanOrEqualTo($bAt) ? $aAt : $bAt;
     }
 
     private function formatUpdatedAt(CarbonInterface $dateTime): string

@@ -309,8 +309,8 @@ describe(SyncExchangeRatesAction::class, function (): void {
 
         expect($prices)->not->toBeEmpty();
 
-        $expectedMin = (float) $prices->min();
-        $expectedRate = number_format($expectedMin, 18, '.', '');
+        $expectedMax = (float) $prices->max();
+        $expectedRate = number_format($expectedMax, 18, '.', '');
 
         $ensureCurrencies('USDT', 'VES');
 
