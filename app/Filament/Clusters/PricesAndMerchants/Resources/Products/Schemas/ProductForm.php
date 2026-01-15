@@ -19,6 +19,7 @@ final class ProductForm
             ->components([
                 Section::make('Detalles del producto')
                     ->description('Define el producto base para comparar precios entre comercios.')
+                    ->columnSpanFull()
                     ->schema([
                         TextInput::make('name')
                             ->label('Nombre')

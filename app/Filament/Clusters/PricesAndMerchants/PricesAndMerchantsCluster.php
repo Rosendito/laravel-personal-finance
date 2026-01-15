@@ -16,4 +16,6 @@ final class PricesAndMerchantsCluster extends Cluster
     protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Start;
 
     protected static ?string $navigationLabel = 'Precios & Comercios';
+
+    protected static ?int $navigationSort = 999;
 }

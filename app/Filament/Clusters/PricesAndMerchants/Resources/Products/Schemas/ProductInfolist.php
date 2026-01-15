@@ -16,6 +16,7 @@ final class ProductInfolist
         return $schema
             ->components([
                 Section::make('Información del producto')
+                    ->columnSpanFull()
                     ->schema([
                         TextEntry::make('name')
                             ->label('Nombre'),

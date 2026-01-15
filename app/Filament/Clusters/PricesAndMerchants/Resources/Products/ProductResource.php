@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Clusters\PricesAndMerchants\Resources\Products;
 
 use App\Filament\Clusters\PricesAndMerchants\PricesAndMerchantsCluster;
-use App\Filament\Clusters\PricesAndMerchants\Resources\Products\Pages\CreateProduct;
-use App\Filament\Clusters\PricesAndMerchants\Resources\Products\Pages\EditProduct;
-use App\Filament\Clusters\PricesAndMerchants\Resources\Products\Pages\ListProducts;
-use App\Filament\Clusters\PricesAndMerchants\Resources\Products\Pages\ViewProduct;
+use App\Filament\Clusters\PricesAndMerchants\Resources\Products\Pages\ManageProducts;
 use App\Filament\Clusters\PricesAndMerchants\Resources\Products\Schemas\ProductForm;
 use App\Filament\Clusters\PricesAndMerchants\Resources\Products\Schemas\ProductInfolist;
 use App\Filament\Clusters\PricesAndMerchants\Resources\Products\Tables\ProductsTable;
@@ -61,10 +58,7 @@ final class ProductResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListProducts::route('/'),
-            'create' => CreateProduct::route('/create'),
-            'view' => ViewProduct::route('/{record}'),
-            'edit' => EditProduct::route('/{record}/edit'),
+            'index' => ManageProducts::route('/'),
         ];
     }
 }

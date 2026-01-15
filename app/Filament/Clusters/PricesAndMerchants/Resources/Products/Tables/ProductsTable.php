@@ -18,7 +18,6 @@ final class ProductsTable
     public static function configure(Table $table): Table
     {
         return $table
-            ->defaultSort('name')
             ->columns([
                 TextColumn::make('name')
                     ->label('Nombre')
@@ -63,6 +62,7 @@ final class ProductsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('name')
             ->filters([])
             ->recordActions([
                 ViewAction::make(),
