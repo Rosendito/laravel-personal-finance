@@ -10,6 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.4.0",
+        "commerceguys/addressing": "^2.2",
         "filament/filament": "^4.4.0",
         "laravel/framework": "^12.44.0",
         "nunomaduro/essentials": "^1.0.1",
