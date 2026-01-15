@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\Merchant;
 
 use App\Enums\EntryMethod;
-use App\Models\MerchantProductListing;
-use App\Models\MerchantProductPrice;
+use App\Models\Merchant\MerchantProductListing;
+use App\Models\Merchant\MerchantProductPrice;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

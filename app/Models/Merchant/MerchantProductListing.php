@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\Merchant;
 
-use Database\Factories\MerchantProductListingFactory;
+use App\Models\Product;
+use Database\Factories\Merchant\MerchantProductListingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

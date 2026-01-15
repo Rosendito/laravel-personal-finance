@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Enums\EntryMethod;
-use App\Models\MerchantProductListing;
-use App\Models\MerchantProductPrice;
+use App\Models\Merchant\MerchantProductListing;
+use App\Models\Merchant\MerchantProductPrice;
 use Carbon\CarbonInterface;
 
 describe(MerchantProductPrice::class, function (): void {

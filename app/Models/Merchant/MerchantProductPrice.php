@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\Merchant;
 
 use App\Enums\EntryMethod;
-use Database\Factories\MerchantProductPriceFactory;
+use Database\Factories\Merchant\MerchantProductPriceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\Address;
-use App\Models\Merchant;
-use App\Models\MerchantLocation;
+use App\Models\Merchant\Merchant;
+use App\Models\Merchant\MerchantLocation;
 use Carbon\CarbonInterface;
 
 describe(MerchantLocation::class, function (): void {

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\Merchant;
 
 use App\Enums\MerchantType;
-use App\Models\Merchant;
+use App\Models\Merchant\Merchant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

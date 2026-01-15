@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Enums\MerchantType;
-use App\Models\Merchant;
-use App\Models\MerchantLocation;
-use App\Models\MerchantProductListing;
+use App\Models\Merchant\Merchant;
+use App\Models\Merchant\MerchantLocation;
+use App\Models\Merchant\MerchantProductListing;
 use Carbon\CarbonInterface;
 
 describe(Merchant::class, function (): void {

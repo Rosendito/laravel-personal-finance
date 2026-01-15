@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Models\Merchant;
-use App\Models\MerchantLocation;
-use App\Models\MerchantProductListing;
-use App\Models\MerchantProductPrice;
+use App\Models\Merchant\Merchant;
+use App\Models\Merchant\MerchantLocation;
+use App\Models\Merchant\MerchantProductListing;
+use App\Models\Merchant\MerchantProductPrice;
 use App\Models\Product;
 use Carbon\CarbonInterface;
 

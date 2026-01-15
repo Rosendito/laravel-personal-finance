@@ -2,30 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\Merchant;
 
-use Database\Factories\MerchantLocationFactory;
+use App\Enums\MerchantType;
+use Database\Factories\Merchant\MerchantFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
 
-final class MerchantLocation extends Model
+final class Merchant extends Model
 {
-    /** @use HasFactory<MerchantLocationFactory> */
+    /** @use HasFactory<MerchantFactory> */
     use HasFactory;
 
-    protected $table = 'merchant_locations';
+    protected $table = 'merchant_merchants';
 
-    public function merchant(): BelongsTo
+    /**
+     * @return HasMany<MerchantLocation>
+     */
+    public function locations(): HasMany
     {
-        return $this->belongsTo(Merchant::class);
-    }
-
-    public function address(): MorphOne
-    {
-        return $this->morphOne(Address::class, 'addressable');
+        return $this->hasMany(MerchantLocation::class);
     }
 
     /**
@@ -42,8 +39,10 @@ final class MerchantLocation extends Model
     protected function casts(): array
     {
         return [
-            'merchant_id' => 'integer',
             'name' => 'string',
+            'merchant_type' => MerchantType::class,
+            'base_url' => 'string',
+            'notes' => 'string',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
