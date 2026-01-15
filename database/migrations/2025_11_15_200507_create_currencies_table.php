@@ -16,7 +16,6 @@ return new class extends Migration
         Schema::create('currencies', function (Blueprint $table): void {
             $table->string('code', 3)->primary();
             $table->unsignedTinyInteger('precision');
-
             $table->timestamps();
         });
     }

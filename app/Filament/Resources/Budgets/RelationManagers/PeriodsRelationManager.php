@@ -84,7 +84,7 @@ final class PeriodsRelationManager extends RelationManager
                     ->label('Spent')
                     ->numeric(2)
                     ->state(static fn (BudgetPeriod $record): string => $record->spent_amount)
-                    ->color(static function (BudgetPeriod $record, $state): string {
+                    ->color(static function (BudgetPeriod $record, mixed $state): string {
                         $spent = (float) $state;
                         $amount = (float) $record->amount;
 
@@ -102,7 +102,7 @@ final class PeriodsRelationManager extends RelationManager
                     ->label('Remaining')
                     ->numeric(2)
                     ->state(static fn (BudgetPeriod $record): string => $record->remaining_amount)
-                    ->color(static function ($state): string {
+                    ->color(static function (mixed $state): string {
                         $remaining = (float) $state;
 
                         if ($remaining < 0) {
@@ -115,7 +115,7 @@ final class PeriodsRelationManager extends RelationManager
                     ->label('% Used')
                     ->state(static fn (BudgetPeriod $record): string => $record->usage_percent)
                     ->suffix('%')
-                    ->color(static function ($state): string {
+                    ->color(static function (mixed $state): string {
                         $percent = (float) $state;
 
                         if ($percent > 100) {
@@ -151,7 +151,7 @@ final class PeriodsRelationManager extends RelationManager
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->before(static function ($records): void {
+                        ->before(static function (iterable $records): void {
                             foreach ($records as $record) {
                                 $hasTransactions = DB::table('ledger_transactions')
                                     ->where('budget_period_id', $record->id)

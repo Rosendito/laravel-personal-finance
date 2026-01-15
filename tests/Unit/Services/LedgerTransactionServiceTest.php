@@ -356,7 +356,7 @@ describe(LedgerTransactionService::class, function (): void {
             'makeTransactionData' => $makeTransactionData,
         ] = $makeContext();
 
-        $eur = Currency::factory()->create(['code' => 'EUR']);
+        $eur = Currency::query()->updateOrCreate(['code' => 'EUR'], ['precision' => 2]);
 
         $eurAccount = LedgerAccount::factory()
             ->for($user)
@@ -443,11 +443,7 @@ describe(LedgerTransactionService::class, function (): void {
             'makeTransactionData' => $makeTransactionData,
         ] = $makeContext();
 
-        Currency::factory()
-            ->state([
-                'code' => 'EUR',
-            ])
-            ->create();
+        Currency::query()->updateOrCreate(['code' => 'EUR'], ['precision' => 2]);
 
         $data = $makeTransactionData(entries: [
             [

@@ -44,7 +44,7 @@ final class AccountBalanceQueryService
             ->get();
 
         return $rows->map(
-            fn ($row): AccountBalanceData => new AccountBalanceData(
+            fn (object $row): AccountBalanceData => new AccountBalanceData(
                 account_id: (int) $row->id,
                 name: $row->name,
                 currency_code: $row->currency_code,
