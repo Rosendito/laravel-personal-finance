@@ -91,7 +91,7 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
         }
 
         return Stat::make('BCV USD como % de USDT', sprintf('%.2f%%', $percentage))
-            ->description($this->buildComparisonDescription('Relación BCV (USD/VES) / Binance (USDT/VES)', $bcvUsdVes, $binanceUsdtVes))
+            ->description($this->buildComparisonDescription('Relación BCV (USD/VES) / Binance (USDT/VES)'))
             ->descriptionIcon($percentage < 100 ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up')
             ->color($percentage < 100 ? 'success' : 'danger');
     }
@@ -105,7 +105,7 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
         }
 
         return Stat::make('BCV EUR como % de USDT', sprintf('%.2f%%', $percentage))
-            ->description($this->buildComparisonDescription('Relación BCV (EUR/VES) / Binance (USDT/VES)', $bcvEurVes, $binanceUsdtVes))
+            ->description($this->buildComparisonDescription('Relación BCV (EUR/VES) / Binance (USDT/VES)'))
             ->descriptionIcon($percentage < 100 ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-arrow-trending-up')
             ->color($percentage < 100 ? 'success' : 'danger');
     }
@@ -132,8 +132,8 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
         return ExchangeRate::query()
             ->where('exchange_source_id', $source->id)
             ->where('exchange_currency_pair_id', $pair->id)
-            ->orderByDesc('effective_at')
-            ->orderByDesc('retrieved_at')
+            ->latest('effective_at')
+            ->latest('retrieved_at')
             ->first();
     }
 
@@ -166,7 +166,7 @@ final class CurrenciesRatesStats extends StatsOverviewWidget
         return "{$base} · {$this->formatUpdatedAt($updatedAt)}";
     }
 
-    private function buildComparisonDescription(string $base, ?ExchangeRate $a, ?ExchangeRate $b): string
+    private function buildComparisonDescription(string $base): string
     {
         return $base;
     }

@@ -69,8 +69,8 @@ final readonly class SyncExchangeRatesAction
         $latestRate = ExchangeRate::query()
             ->where('exchange_currency_pair_id', $pair->id)
             ->where('exchange_source_id', $source->id)
-            ->orderByDesc('effective_at')
-            ->orderByDesc('retrieved_at')
+            ->latest('effective_at')
+            ->latest('retrieved_at')
             ->orderByDesc('id')
             ->first();
 

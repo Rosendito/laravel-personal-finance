@@ -26,7 +26,7 @@ final class BestPriceRateCalculator implements RateCalculator
 
         throw_if($prices->isEmpty(), RuntimeException::class, 'No numeric prices were provided for rate calculation.');
 
-        $tradeType = $this->resolveTradeType($quotes);
+        $tradeType = $this->resolveTradeType();
         $min = (float) $prices->min();
         $max = (float) $prices->max();
         $median = $this->median($prices);
@@ -52,21 +52,8 @@ final class BestPriceRateCalculator implements RateCalculator
         ];
     }
 
-    private function resolveTradeType(Collection $quotes): ?string
+    private function resolveTradeType(): string
     {
-        return 'SELL';
-
-        $types = $quotes
-            ->map(fn (array $quote): mixed => data_get($quote, 'trade_type'))
-            ->filter(fn (mixed $type): bool => is_string($type) && $type !== '')
-            ->map(fn (string $type): string => mb_strtoupper($type))
-            ->unique()
-            ->values();
-
-        if ($types->count() === 1) {
-            return $types->first();
-        }
-
         return 'SELL';
     }
 
