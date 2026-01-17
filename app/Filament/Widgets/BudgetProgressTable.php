@@ -8,6 +8,7 @@ use App\Data\Dashboard\BudgetProgressData;
 use App\Helpers\MoneyFormatter;
 use App\Models\Budget;
 use App\Services\Queries\DashboardBudgetProgressQueryService;
+use App\Support\Dates\MonthlyDateRange;
 use Carbon\CarbonImmutable;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -104,14 +105,21 @@ final class BudgetProgressTable extends BaseWidget
 
         $startDate = is_string($start) && $start !== ''
             ? CarbonImmutable::parse($start)
-            : CarbonImmutable::today()->subMonth()->setDay(15);
+            : null;
 
         $endDate = is_string($end) && $end !== ''
             ? CarbonImmutable::parse($end)
-            : CarbonImmutable::today()->setDay(15);
+            : null;
 
-        if ($endDate->lessThanOrEqualTo($startDate)) {
-            $endDate = $startDate->addMonth();
+        if (! $startDate instanceof CarbonImmutable && ! $endDate instanceof CarbonImmutable) {
+            return MonthlyDateRange::forDate(CarbonImmutable::today());
+        }
+
+        $startDate ??= $endDate->startOfMonth();
+        $endDate ??= $startDate->endOfMonth();
+
+        if ($endDate->lessThan($startDate)) {
+            $endDate = $startDate->endOfMonth();
         }
 
         return [$startDate, $endDate];

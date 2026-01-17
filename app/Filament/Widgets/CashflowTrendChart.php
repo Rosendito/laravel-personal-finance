@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Widgets;
 
 use App\Services\Queries\DashboardCashflowSeriesQueryService;
+use App\Support\Dates\MonthlyDateRange;
 use Carbon\CarbonImmutable;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -70,14 +71,21 @@ final class CashflowTrendChart extends ChartWidget
 
         $startDate = is_string($start) && $start !== ''
             ? CarbonImmutable::parse($start)
-            : CarbonImmutable::today()->subMonth()->setDay(15);
+            : null;
 
         $endDate = is_string($end) && $end !== ''
             ? CarbonImmutable::parse($end)
-            : CarbonImmutable::today()->setDay(15);
+            : null;
 
-        if ($endDate->lessThanOrEqualTo($startDate)) {
-            $endDate = $startDate->addMonth();
+        if (! $startDate instanceof CarbonImmutable && ! $endDate instanceof CarbonImmutable) {
+            return MonthlyDateRange::forDate(CarbonImmutable::today());
+        }
+
+        $startDate ??= $endDate->startOfMonth();
+        $endDate ??= $startDate->endOfMonth();
+
+        if ($endDate->lessThan($startDate)) {
+            $endDate = $startDate->endOfMonth();
         }
 
         return [$startDate, $endDate];
