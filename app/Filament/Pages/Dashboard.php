@@ -9,6 +9,7 @@ use App\Filament\Widgets\CashflowTrendChart;
 use App\Filament\Widgets\FinanceSnapshotStats;
 use App\Filament\Widgets\RecentTransactionsTable;
 use App\Filament\Widgets\SpendingByCategoryChart;
+use App\Support\Dates\MonthlyDateRange;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -103,16 +104,7 @@ final class Dashboard extends BaseDashboard
      */
     private function defaultRange(): array
     {
-        $today = CarbonImmutable::today();
-        $fifteenth = $today->day < 15
-            ? $today->subMonth()->setDay(15)
-            : $today->setDay(15);
-
-        $end = $today->day < 15
-            ? $today->setDay(15)
-            : $today->addMonth()->setDay(15);
-
-        return [$fifteenth, $end];
+        return MonthlyDateRange::forDate(CarbonImmutable::today());
     }
 
     private function nowMonthStart(): CarbonImmutable
@@ -131,7 +123,7 @@ final class Dashboard extends BaseDashboard
         $end = $get->string('end_at', isNullable: true);
 
         if ($end !== null) {
-            return CarbonImmutable::parse($end)->subMonth()->startOfMonth();
+            return CarbonImmutable::parse($end)->startOfMonth();
         }
 
         return $this->nowMonthStart();
@@ -140,7 +132,7 @@ final class Dashboard extends BaseDashboard
     private function setMonthRange(Set $set, CarbonImmutable $monthStart): void
     {
         $monthStart = $monthStart->startOfMonth();
-        $monthEnd = $monthStart->addMonth();
+        $monthEnd = $monthStart->endOfMonth();
 
         $set('start_at', $monthStart->toDateString(), false, true);
         $set('end_at', $monthEnd->toDateString(), false, true);
