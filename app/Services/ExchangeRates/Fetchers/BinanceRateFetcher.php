@@ -109,7 +109,7 @@ final readonly class BinanceRateFetcher implements ExchangeRateFetcher
     {
         $pairKey = "{$pair->base_currency_code}/{$pair->quote_currency_code}";
 
-        return data_get($source->metadata, "binance_p2p.trans_amount.by_pair.{$pairKey}", data_get($source->metadata, 'binance_p2p.trans_amount.default', 20000));
+        return data_get($source->metadata, "binance_p2p.trans_amount.by_pair.{$pairKey}", data_get($source->metadata, 'binance_p2p.trans_amount.default', 15000));
     }
 
     private function rows(ExchangeSource $source, ExchangeCurrencyPair $pair): int
