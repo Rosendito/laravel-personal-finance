@@ -9,25 +9,12 @@ $syncExchangeRatesBinanceP2PCommand = 'exchange-rates:sync --source='.ExchangeSo
 $syncExchangeRatesBcvCommand = 'exchange-rates:sync --source='.ExchangeSourceKey::BCV->value;
 $timezone = 'America/Caracas';
 
+Schedule::command($syncExchangeRatesBcvCommand)
+    ->name('exchange-rates:sync-bcv')
+    ->timezone($timezone)
+    ->everyFiveMinutes();
+
 Schedule::command($syncExchangeRatesBinanceP2PCommand)
-    ->everyFiveMinutes()
-    ->withoutOverlapping();
-
-Schedule::command($syncExchangeRatesBcvCommand)
+    ->name('exchange-rates:sync-binance-p2p')
     ->timezone($timezone)
-    ->everyFiveMinutes()
-    ->between('09:00', '09:30')
-    ->withoutOverlapping();
-
-Schedule::command($syncExchangeRatesBcvCommand)
-    ->timezone($timezone)
-    ->everyFiveMinutes()
-    ->between('13:00', '13:30')
-    ->withoutOverlapping();
-
-Schedule::command($syncExchangeRatesBcvCommand)
-    ->timezone($timezone)
-    ->hourly()
-    ->unlessBetween('08:55', '09:35')
-    ->unlessBetween('12:55', '13:35')
-    ->withoutOverlapping(10);
+    ->everyFiveMinutes();

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Support\Facades\Date;
 
 final class Budget extends Model
 {
@@ -33,7 +34,12 @@ final class Budget extends Model
 
     public function currentPeriod(): HasOne
     {
-        return $this->hasOne(BudgetPeriod::class)->latest('start_at');
+        $anchor = Date::now()->toDateString();
+
+        return $this->hasOne(BudgetPeriod::class)
+            ->whereDate('start_at', '<=', $anchor)
+            ->whereDate('end_at', '>', $anchor)
+            ->latest('start_at');
     }
 
     public function currentBalanceAggregate(): MorphOne

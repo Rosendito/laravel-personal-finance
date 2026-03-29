@@ -7,7 +7,7 @@ namespace App\Listeners;
 use App\Actions\UpdateBudgetPeriodAggregatesAction;
 use App\Events\LedgerTransactionCreated;
 use App\Events\LedgerTransactionUpdated;
-use App\Models\Budget;
+use App\Models\BudgetPeriod;
 
 final readonly class UpdateBudgetPeriodAggregates
 {
@@ -17,13 +17,29 @@ final readonly class UpdateBudgetPeriodAggregates
 
     public function handle(LedgerTransactionCreated|LedgerTransactionUpdated $event): void
     {
-        // Update all budget periods from an user
-        $budgets = Budget::query()->whereBelongsTo($event->transaction->user)
-            ->with('currentPeriod')
+        $periodIds = [
+            $event->transaction->budget_period_id,
+        ];
+
+        if ($event instanceof LedgerTransactionUpdated) {
+            /** @var LedgerTransactionUpdated $updatedEvent */
+            $updatedEvent = $event;
+
+            $periodIds[] = $updatedEvent->previousBudgetPeriodId;
+        }
+
+        $periodIds = array_values(array_unique(array_filter($periodIds, static fn (?int $id): bool => $id !== null)));
+
+        if ($periodIds === []) {
+            return;
+        }
+
+        $periods = BudgetPeriod::query()
+            ->whereIn('id', $periodIds)
             ->get();
 
-        foreach ($budgets as $budget) {
-            $this->updateAggregatesAction->execute($budget->currentPeriod);
+        foreach ($periods as $period) {
+            $this->updateAggregatesAction->execute($period);
         }
     }
 }

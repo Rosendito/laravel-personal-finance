@@ -29,6 +29,12 @@ final class SyncExchangeRates extends Command
         $requestedAt = now()->toIso8601String();
         $input = $this->parseInputOptions();
 
+        logger()->info('exchange-rates:sync started', [
+            'run_id' => $runId,
+            'requested_at' => $requestedAt,
+            'input' => $input,
+        ]);
+
         try {
             $this->ensureAtLeastOneFilterProvided($input);
 

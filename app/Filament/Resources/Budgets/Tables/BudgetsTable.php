@@ -14,6 +14,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Date;
 
 final class BudgetsTable
 {
@@ -39,9 +40,18 @@ final class BudgetsTable
                     ->label('Budgeted')
                     ->numeric(2)
                     ->state(static fn (Budget $record): ?string => $record->currentPeriod?->amount)
-                    ->sortable(query: static fn (Builder $query, string $direction): Builder => $query->join('budget_periods', 'budgets.id', '=', 'budget_periods.budget_id')
-                        ->orderBy('budget_periods.amount', $direction)
-                        ->select('budgets.*')),
+                    ->sortable(query: static function (Builder $query, string $direction): Builder {
+                        $anchor = Date::now()->toDateString();
+
+                        return $query
+                            ->join('budget_periods', static function ($join) use ($anchor): void {
+                                $join->on('budgets.id', '=', 'budget_periods.budget_id')
+                                    ->whereDate('budget_periods.start_at', '<=', $anchor)
+                                    ->whereDate('budget_periods.end_at', '>', $anchor);
+                            })
+                            ->orderBy('budget_periods.amount', $direction)
+                            ->select('budgets.*');
+                    }),
                 TextColumn::make('currentPeriod.spent_amount')
                     ->label('Spent')
                     ->numeric(2)

@@ -26,7 +26,9 @@ final readonly class UpdateLedgerTransactionAction
         $this->ledgerTransactionService->assertCategoryOwnership($category, $user);
         $budgetPeriod = $this->ledgerTransactionService->determineBudgetPeriod($category, $data->effective_at);
 
-        return DB::transaction(function () use ($transaction, $data, $budgetPeriod): LedgerTransaction {
+        $previousBudgetPeriodId = $transaction->budget_period_id;
+
+        return DB::transaction(function () use ($transaction, $data, $budgetPeriod, $previousBudgetPeriodId): LedgerTransaction {
             $transaction->update([
                 'description' => $data->description,
                 'effective_at' => $data->effective_at,
@@ -38,7 +40,7 @@ final readonly class UpdateLedgerTransactionAction
 
             $transaction->load('budgetPeriod');
 
-            event(new LedgerTransactionUpdated($transaction));
+            event(new LedgerTransactionUpdated($transaction, $previousBudgetPeriodId));
 
             return $transaction;
         });

@@ -13,5 +13,8 @@ final class LedgerTransactionUpdated
     use Dispatchable;
     use SerializesModels;
 
-    public function __construct(public LedgerTransaction $transaction) {}
+    public function __construct(
+        public LedgerTransaction $transaction,
+        public ?int $previousBudgetPeriodId = null,
+    ) {}
 }
